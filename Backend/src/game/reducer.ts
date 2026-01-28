@@ -28,7 +28,12 @@ export function applyAction(state: GameState, action: GameAction): GameState {
 
     case 'BID': {
       if (next.phase !== 'BIDDING') return state;
-      if (!isBidValid(action.value, next.highestBid)) return state;
+
+      const player = next.players.find(p => p.id === action.playerId);
+      if (!player) return state;
+      const teamScore = next.teams[player.teamId].score;
+
+      if (!isBidValid(action.value, teamScore, next.highestBid)) return state;
 
       next.highestBid = action.value;
       next.bidderId = action.playerId;
