@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createDeck, shuffleDeck } from './deck.js';
-import type { Card } from '../types/game.types.js';
+import { createDeck, shuffleDeck } from '../deck.js';
+import type { Card } from '../../types/game.types.js';
 
 // Deterministic RNG helper for tests
 function makeRng(sequence: number[]): () => number {

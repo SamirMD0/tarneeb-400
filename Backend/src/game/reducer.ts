@@ -1,13 +1,13 @@
 // game/reducer.ts
 
-import { GameState } from "./state.js";
+import { createInitialGameState, GameState } from "./state.js";
 import { GameAction } from "./actions.js";
 import {
   canPlayCard,
   resolveTrick,
   isBidValid,
   calculateScore,
-  getPlayerIndex
+  getPlayerIndex,
 } from "./rules.js";
 
 export function applyAction(state: GameState, action: GameAction): GameState {
@@ -15,21 +15,20 @@ export function applyAction(state: GameState, action: GameAction): GameState {
   const next: GameState = structuredClone(state);
 
   switch (action.type) {
-
     // -------------------------------
     // BIDDING
     // -------------------------------
-    case 'START_BIDDING': {
-      if (next.phase !== 'DEALING') return state;
-      next.phase = 'BIDDING';
+    case "START_BIDDING": {
+      if (next.phase !== "DEALING") return state;
+      next.phase = "BIDDING";
       next.currentPlayerIndex = 0;
       return next;
     }
 
-    case 'BID': {
-      if (next.phase !== 'BIDDING') return state;
+    case "BID": {
+      if (next.phase !== "BIDDING") return state;
 
-      const player = next.players.find(p => p.id === action.playerId);
+      const player = next.players.find((p) => p.id === action.playerId);
       if (!player) return state;
       const teamScore = next.teams[player.teamId].score;
 
@@ -41,18 +40,18 @@ export function applyAction(state: GameState, action: GameAction): GameState {
       return next;
     }
 
-    case 'PASS': {
-      if (next.phase !== 'BIDDING') return state;
+    case "PASS": {
+      if (next.phase !== "BIDDING") return state;
       next.currentPlayerIndex = (next.currentPlayerIndex + 1) % 4;
       return next;
     }
 
-    case 'SET_TRUMP': {
-      if (next.phase !== 'BIDDING') return state;
+    case "SET_TRUMP": {
+      if (next.phase !== "BIDDING") return state;
       if (!next.bidderId) return state;
 
       next.trumpSuit = action.suit;
-      next.phase = 'PLAYING';
+      next.phase = "PLAYING";
       next.currentPlayerIndex = getPlayerIndex(next, next.bidderId);
       return next;
     }
@@ -60,18 +59,23 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     // -------------------------------
     // PLAYING
     // -------------------------------
-    case 'PLAY_CARD': {
-      if (next.phase !== 'PLAYING') return state;
+    case "PLAY_CARD": {
+      if (next.phase !== "PLAYING") return state;
 
-      const player = next.players.find(p => p.id === action.playerId);
+      const player = next.players.find((p) => p.id === action.playerId);
       if (!player) return state;
 
       if (!canPlayCard(next, action.playerId, action.card)) return state;
 
       // Remove card from hand
       player.hand = player.hand.filter(
-        c => !(c.suit === action.card.suit && c.rank === action.card.rank)
+        (c) => !(c.suit === action.card.suit && c.rank === action.card.rank),
       );
+
+      // ADD THESE LINES: Track who started the trick
+      if (next.trick.length === 0) {
+        next.trickStartPlayerIndex = next.currentPlayerIndex;
+      }
 
       // Add to trick
       next.trick.push(action.card);
@@ -83,29 +87,35 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     }
 
     case 'END_TRICK': {
-      if (next.phase !== 'PLAYING') return state;
-      if (next.trick.length !== 4) return state;
+  if (next.phase !== 'PLAYING') return state;
+  if (next.trick.length !== 4) return state;
 
-      const winnerId = resolveTrick(next);
-      if (!winnerId) return state;
+  const winnerId = resolveTrick(next);
+  if (!winnerId) return state;
 
-      next.trick = [];
-      next.currentPlayerIndex = getPlayerIndex(next, winnerId);
+  next.trick = [];
+  next.trickStartPlayerIndex = undefined; // ADD THIS LINE
+  next.currentPlayerIndex = getPlayerIndex(next, winnerId);
 
-      return next;
-    }
+  return next;
+}
 
     // -------------------------------
     // ROUND END
     // -------------------------------
-    case 'END_ROUND': {
+    case "END_ROUND": {
       if (!next.bidderId || !next.highestBid) return state;
 
       calculateScore(next, next.highestBid, next.bidderId);
 
-      next.phase = 'SCORING';
+      next.phase = "SCORING";
       return next;
     }
+
+    case 'RESET_GAME': {
+  const playerIds = state.players.map(p => p.id);
+  return createInitialGameState(playerIds);
+}
 
     default:
       return state;

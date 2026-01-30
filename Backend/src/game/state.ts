@@ -28,8 +28,9 @@ export interface GameState {
   deck: Card[];
   trumpSuit?: Suit;
   currentPlayerIndex: number;
+  trickStartPlayerIndex?: number; // ADD THIS LINE
   phase: GamePhase;
-  trick: Card[]; 
+  trick: Card[];
   highestBid?: number;
   bidderId?: string;
 }

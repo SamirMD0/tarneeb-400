@@ -35,7 +35,7 @@ export function compareCards(
 
   // Same suit → compare rank (FIXED: higher rank must win)
   if (cardA.suit === cardB.suit) {
-    return (
+    return Math.sign(
       rankOrder.indexOf(cardB.rank) -
       rankOrder.indexOf(cardA.rank)
     );
@@ -83,8 +83,12 @@ export function canPlayCard(
 export function resolveTrick(state: GameState): string | undefined {
   if (state.trick.length !== 4 || !state.trumpSuit) return undefined;
 
+  // ADD THIS CHECK
+  if (state.trickStartPlayerIndex === undefined) return undefined;
+
   const leadSuit = state.trick[0]?.suit;
   if (!leadSuit) return undefined;
+
   let winningIndex = 0;
 
   for (let i = 1; i < state.trick.length; i++) {
@@ -97,9 +101,9 @@ export function resolveTrick(state: GameState): string | undefined {
     if (cmp > 0) winningIndex = i;
   }
 
-  // Map trick index → actual player
+  // FIX: Use trickStartPlayerIndex instead of currentPlayerIndex
   const winner =
-    state.players[(state.currentPlayerIndex + winningIndex) % 4];
+    state.players[(state.trickStartPlayerIndex + winningIndex) % 4];
   if (!winner) return undefined;
 
   // Update team tricks
@@ -163,29 +167,60 @@ export function isBiddingRoundValid(
 /* =========================================================
    ROUND SCORING
    ========================================================= */
+export function calculateScoreDeltas(
+  contractBid: number,
+  bidderId: string,
+  tricksWon: { 1: number; 2: number },
+  players: { id: string; teamId: 1 | 2 }[]
+): { team1: number; team2: number } | undefined {
+  const bidder = players.find(p => p.id === bidderId);
+  if (!bidder) return undefined;
+
+  const bidderTeamId = bidder.teamId;
+  const defenderTeamId = bidderTeamId === 1 ? 2 : 1;
+
+  const bidderTricks = tricksWon[bidderTeamId];
+  const defenderTricks = tricksWon[defenderTeamId];
+
+  let bidderScoreDelta = 0;
+
+  // Bidder team scoring
+  if (bidderTricks >= contractBid) {
+    bidderScoreDelta = bidderTricks * 10;
+  } else {
+    bidderScoreDelta = -(contractBid * 10);
+  }
+
+  // Defending team always scores their tricks
+  const defenderScoreDelta = defenderTricks * 10;
+
+  return {
+    team1: bidderTeamId === 1 ? bidderScoreDelta : defenderScoreDelta,
+    team2: bidderTeamId === 2 ? bidderScoreDelta : defenderScoreDelta
+  };
+}
+
 export function calculateScore(
   state: GameState,
   contractBid: number,
   bidderId: string
 ): void {
-  const bidderTeamId =
-    state.players.find(p => p.id === bidderId)?.teamId;
-  if (!bidderTeamId) return;
+  const tricksWon = {
+    1: state.teams[1].tricksWon,
+    2: state.teams[2].tricksWon
+  };
 
-  const defenderTeamId = bidderTeamId === 1 ? 2 : 1;
+  const deltas = calculateScoreDeltas(
+    contractBid,
+    bidderId,
+    tricksWon,
+    state.players as { id: string; teamId: 1 | 2 }[]
+  );
 
-  const bidderTricks = state.teams[bidderTeamId].tricksWon;
-  const defenderTricks = state.teams[defenderTeamId].tricksWon;
-
-  // Bidder team scoring
-  if (bidderTricks >= contractBid) {
-    state.teams[bidderTeamId].score += bidderTricks * 10;
-  } else {
-    state.teams[bidderTeamId].score -= contractBid * 10;
+  if (deltas) {
+    state.teams[1].score += deltas.team1;
+    state.teams[2].score += deltas.team2;
   }
-
-  // Defending team always scores their tricks
-  state.teams[defenderTeamId].score += defenderTricks * 10;
 }
 
 /* =========================================================
