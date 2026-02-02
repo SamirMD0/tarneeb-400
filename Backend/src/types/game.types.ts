@@ -1,4 +1,4 @@
- // game.types.ts - Phase 2: Type System Foundation
+// game.types.ts - Phase 2: Type System Foundation
 
 export type Suit = 'SPADES' | 'HEARTS' | 'DIAMONDS' | 'CLUBS';
 
@@ -42,3 +42,13 @@ export type PlayCardAction = {
   playerId: string;
   card: Card;
 };
+
+// Phase 15: Round snapshot for game history persistence
+export interface RoundSnapshot {
+  roundNumber: number;
+  bidderId: string;
+  bidValue: number;
+  trumpSuit: Suit;
+  tricksWon: { team1: number; team2: number };
+  scoreDeltas: { team1: number; team2: number };
+}

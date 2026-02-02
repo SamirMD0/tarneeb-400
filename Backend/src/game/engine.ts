@@ -1,16 +1,30 @@
+// Backend/src/game/engine.ts - Phase 15: GameEngine with roomId for persistence
+
 import { GameState, createInitialGameState, PlayerState } from "./state.js";
 import { GameAction } from "./actions.js";
 import { applyAction } from "./reducer.js";
-import { getPlayerIndex } from "./rules.js";
+import { saveGame } from "../services/gameHistory.service.js";
+import type { RoundSnapshot } from "../types/game.types.js";
 
 type GameListener = (state: GameState) => void;
 
 export class GameEngine {
     private state: GameState;
+    private readonly roomId: string;
+    private readonly startedAt: Date;
     private listeners: GameListener[] = [];
+    private rounds: RoundSnapshot[] = [];
+    private currentRoundNumber = 1;
+    private hasPersisted = false;
 
-    constructor(playerIds: string[]) {
+    constructor(playerIds: string[], roomId?: string) {
         this.state = createInitialGameState(playerIds);
+        this.roomId = roomId ?? 'unknown';
+        this.startedAt = new Date();
+    }
+
+    public getRoomId(): string {
+        return this.roomId;
     }
 
     public getState(): Readonly<GameState> {
@@ -25,6 +39,30 @@ export class GameEngine {
         if (nextState !== prevState) {
             this.state = nextState;
             this.notifyListeners();
+
+            // Track round snapshots for history
+            if (action.type === 'END_ROUND' && prevState.bidderId && prevState.highestBid && prevState.trumpSuit) {
+                this.rounds.push({
+                    roundNumber: this.currentRoundNumber++,
+                    bidderId: prevState.bidderId,
+                    bidValue: prevState.highestBid,
+                    trumpSuit: prevState.trumpSuit,
+                    tricksWon: {
+                        team1: prevState.teams[1].tricksWon,
+                        team2: prevState.teams[2].tricksWon,
+                    },
+                    scoreDeltas: {
+                        team1: this.state.teams[1].score - prevState.teams[1].score,
+                        team2: this.state.teams[2].score - prevState.teams[2].score,
+                    },
+                });
+            }
+
+            // Phase 15: Persist game when it ends
+            if (this.isGameOver() && !this.hasPersisted) {
+                this.persistGame();
+            }
+
             return true;
         }
 
@@ -53,13 +91,11 @@ export class GameEngine {
         if (team2.score > team1.score) return 2;
 
         // Tie-breaker: If scores are equal, the bidding team wins
-        // (This rule assumes game ends on a bid round, so there IS a bidder)
         if (this.state.bidderId) {
             const bidder = this.state.players.find(p => p.id === this.state.bidderId);
             if (bidder) return bidder.teamId;
         }
 
-        // Fallback (should theoretically not happen in standard play if 41 is reached via bidding round)
         return undefined;
     }
 
@@ -72,5 +108,29 @@ export class GameEngine {
 
     private notifyListeners() {
         this.listeners.forEach(listener => listener(this.state));
+    }
+
+    /**
+     * Persist game to MongoDB when game ends
+     */
+    private async persistGame(): Promise<void> {
+        const winner = this.getWinner();
+        if (!winner) return;
+
+        this.hasPersisted = true;
+
+        try {
+            await saveGame(
+                this.roomId,
+                this.state,
+                winner,
+                this.startedAt,
+                this.rounds
+            );
+            console.log(`Game ${this.roomId} persisted successfully`);
+        } catch (error) {
+            console.error(`Failed to persist game ${this.roomId}:`, error);
+            // Don't throw - game can continue even if persistence fails
+        }
     }
 }

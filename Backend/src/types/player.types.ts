@@ -12,10 +12,19 @@ export interface PlayerState {
   name: string;
   hand: Card[];
   teamId: TeamID;
-  
+
 }
 
 export interface TeamState {
   tricksWon: number;
   score: number;
+}
+
+// Phase 15: Leaderboard entry for type-safe queries
+export interface LeaderboardEntry {
+  userId: string;
+  username: string;
+  gamesPlayed: number;
+  wins: number;
+  winRate: number;
 }

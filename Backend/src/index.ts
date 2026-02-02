@@ -5,7 +5,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 
 import { connectMongo } from './lib/mongoose.js';
-import { connectRedis } from './lib/redisClient.js';
+import { redis } from './lib/redis.js';
 import healthRouter from './routes/health.js';
 
 const PORT = process.env.PORT || 5000;
@@ -27,7 +27,7 @@ app.use('/api', healthRouter);
 
 async function bootstrap(): Promise<void> {
     await connectMongo();
-    await connectRedis();
+    await redis.connect();
 
     httpServer.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
