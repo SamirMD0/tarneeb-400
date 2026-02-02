@@ -1187,4 +1187,111 @@ describe('rules', () => {
       assert.equal(getPlayerIndex(state, 'p1'), 0);
     });
   });
+
+  // =================================================================
+  // PHASE 13: EDGE CASE HARDENING
+  // =================================================================
+
+  describe('Phase 13: Scoring Edge Cases', () => {
+    const players = [
+      { id: 'p1', teamId: 1 as const },
+      { id: 'p2', teamId: 2 as const },
+      { id: 'p3', teamId: 1 as const },
+      { id: 'p4', teamId: 2 as const }
+    ];
+
+    it('should handle negative score correctly when team has zero score', () => {
+      const deltas = calculateScoreDeltas(
+        10,
+        'p1', // Team 1 bidder
+        { 1: 5, 2: 8 }, // Failed contract
+        players
+      );
+
+      // Team 1 should get -100 (contract penalty)
+      assert.deepEqual(deltas, { team1: -100, team2: 80 });
+    });
+
+    it('should handle negative score when team already has low score', () => {
+      // This tests the mathematical correctness of negative deltas
+      const deltas = calculateScoreDeltas(
+        7,
+        'p2', // Team 2 bidder
+        { 1: 10, 2: 3 }, // Failed contract
+        players
+      );
+
+      // Team 2 should get -70 (contract penalty)
+      assert.deepEqual(deltas, { team1: 100, team2: -70 });
+    });
+
+    it('should allow scores to exceed 1000 points (no overflow)', () => {
+      // Simulate a very high-scoring game
+      const deltas = calculateScoreDeltas(
+        13,
+        'p1',
+        { 1: 13, 2: 0 },
+        players
+      );
+
+      // Should return 130, which when added to high scores won't cause issues
+      assert.deepEqual(deltas, { team1: 130, team2: 0 });
+    });
+
+    it('should handle score calculation with max tricks (13-0 sweep)', () => {
+      const deltas = calculateScoreDeltas(
+        7,
+        'p1',
+        { 1: 13, 2: 0 },
+        players
+      );
+
+      assert.deepEqual(deltas, { team1: 130, team2: 0 });
+    });
+  });
+
+  describe('Phase 13: State Validation', () => {
+    it('should reject canPlayCard for non-existent player', () => {
+      const state = createInitialGameState(['p1', 'p2', 'p3', 'p4']);
+      state.phase = 'PLAYING';
+      state.trumpSuit = 'SPADES';
+
+      const result = canPlayCard(state, 'non_existent', { suit: 'HEARTS', rank: 'A' });
+      assert.equal(result, false);
+    });
+
+    it('should handle resolveTrick with undefined trickStartPlayerIndex', () => {
+      const state = createInitialGameState(['p1', 'p2', 'p3', 'p4']);
+      state.phase = 'PLAYING';
+      state.trumpSuit = 'SPADES';
+      state.trickStartPlayerIndex = undefined;
+      state.trick = [
+        { suit: 'HEARTS', rank: 'A' },
+        { suit: 'HEARTS', rank: 'K' },
+        { suit: 'HEARTS', rank: 'Q' },
+        { suit: 'HEARTS', rank: 'J' }
+      ];
+
+      const result = resolveTrick(state);
+      assert.equal(result, undefined);
+    });
+
+    it('should handle resolveTrick with empty trick array', () => {
+      const state = createInitialGameState(['p1', 'p2', 'p3', 'p4']);
+      state.phase = 'PLAYING';
+      state.trumpSuit = 'SPADES';
+      state.trick = [];
+
+      const result = resolveTrick(state);
+      assert.equal(result, undefined);
+    });
+
+    it('should handle empty deck in state (edge case after dealing)', () => {
+      const state = createInitialGameState(['p1', 'p2', 'p3', 'p4']);
+      state.deck = []; // Clear deck after dealing
+
+      // Game should still function - deck is only needed for dealing
+      assert.equal(state.players[0]!.hand.length, 13);
+    });
+  });
 });

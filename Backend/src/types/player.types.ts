@@ -12,6 +12,7 @@ export interface PlayerState {
   name: string;
   hand: Card[];
   teamId: TeamID;
+  
 }
 
 export interface TeamState {

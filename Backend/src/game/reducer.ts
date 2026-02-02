@@ -9,6 +9,13 @@ import {
   calculateScore,
   getPlayerIndex,
 } from "./rules.js";
+import type { Suit } from "../types/game.types.js";
+
+// Phase 13: Valid suit validation helper
+const VALID_SUITS: Suit[] = ['SPADES', 'HEARTS', 'DIAMONDS', 'CLUBS'];
+function isValidSuit(suit: unknown): suit is Suit {
+  return typeof suit === 'string' && VALID_SUITS.includes(suit as Suit);
+}
 
 export function applyAction(state: GameState, action: GameAction): GameState {
   // Clone shallow state (engine-level immutability)
@@ -50,6 +57,9 @@ export function applyAction(state: GameState, action: GameAction): GameState {
       if (next.phase !== "BIDDING") return state;
       if (!next.bidderId) return state;
 
+      // Phase 13: Validate suit is valid
+      if (!isValidSuit(action.suit)) return state;
+
       next.trumpSuit = action.suit;
       next.phase = "PLAYING";
       next.currentPlayerIndex = getPlayerIndex(next, next.bidderId);
@@ -61,6 +71,9 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     // -------------------------------
     case "PLAY_CARD": {
       if (next.phase !== "PLAYING") return state;
+
+      // Phase 13: Reject if trick already complete
+      if (next.trick.length >= 4) return state;
 
       const player = next.players.find((p) => p.id === action.playerId);
       if (!player) return state;
@@ -87,18 +100,18 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     }
 
     case 'END_TRICK': {
-  if (next.phase !== 'PLAYING') return state;
-  if (next.trick.length !== 4) return state;
+      if (next.phase !== 'PLAYING') return state;
+      if (next.trick.length !== 4) return state;
 
-  const winnerId = resolveTrick(next);
-  if (!winnerId) return state;
+      const winnerId = resolveTrick(next);
+      if (!winnerId) return state;
 
-  next.trick = [];
-  next.trickStartPlayerIndex = undefined; // ADD THIS LINE
-  next.currentPlayerIndex = getPlayerIndex(next, winnerId);
+      next.trick = [];
+      next.trickStartPlayerIndex = undefined; // ADD THIS LINE
+      next.currentPlayerIndex = getPlayerIndex(next, winnerId);
 
-  return next;
-}
+      return next;
+    }
 
     // -------------------------------
     // ROUND END
@@ -113,9 +126,9 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     }
 
     case 'RESET_GAME': {
-  const playerIds = state.players.map(p => p.id);
-  return createInitialGameState(playerIds);
-}
+      const playerIds = state.players.map(p => p.id);
+      return createInitialGameState(playerIds);
+    }
 
     default:
       return state;

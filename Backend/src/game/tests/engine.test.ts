@@ -120,4 +120,43 @@ describe("GameEngine", () => {
             assert.strictEqual(engine.getWinner(), undefined);
         });
     });
+
+    // =================================================================
+    // PHASE 13: EDGE CASE HARDENING
+    // =================================================================
+
+    describe("Phase 13: State Corruption Safety", () => {
+        it("should handle getCurrentPlayer when currentPlayerIndex is at boundary", () => {
+            const engine = new GameEngine(MOCK_PLAYERS);
+            const state = (engine as any).state;
+
+            // Test boundary index (3 = last valid)
+            state.currentPlayerIndex = 3;
+            assert.strictEqual(engine.getCurrentPlayer().id, "p4");
+        });
+
+        it("should throw error for getCurrentPlayer with invalid index", () => {
+            const engine = new GameEngine(MOCK_PLAYERS);
+            const state = (engine as any).state;
+
+            // Set invalid index
+            state.currentPlayerIndex = 10;
+
+            assert.throws(() => {
+                engine.getCurrentPlayer();
+            }, /Invalid player index/);
+        });
+
+        it("should handle getWinner when both teams have equal high scores", () => {
+            const engine = new GameEngine(MOCK_PLAYERS);
+            const state = (engine as any).state;
+
+            state.teams[1].score = 50;
+            state.teams[2].score = 50;
+            state.bidderId = "p3"; // Team 1 member
+
+            assert.strictEqual(engine.isGameOver(), true);
+            assert.strictEqual(engine.getWinner(), 1); // Bidder's team wins
+        });
+    });
 });

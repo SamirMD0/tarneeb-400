@@ -1,4 +1,4 @@
-// room.types.ts - Phase 2: Type System Foundation
+// Backend/src/types/room.types.ts - PHASE 14 CORRECTED
 
 import { PlayerID } from './player.types.js';
 
@@ -17,14 +17,26 @@ export interface RoomConfig {
   timePerTurn?: number;       // Seconds (optional)
 }
 
-// Full room state (used by RoomManager in Phase 14)
+/**
+ * Lobby-level player representation
+ * Used in Room class before game starts
+ * Separate from GameState PlayerState
+ */
+export interface LobbyPlayer {
+  id: PlayerID;
+  name: string;
+  isConnected: boolean;
+}
+
+/**
+ * Full room state (used by RoomManager in Phase 14)
+ * This is what gets serialized to Redis/broadcast via Socket.IO
+ */
 export interface RoomState {
   id: RoomID;
   phase: RoomPhase;
-  players: Map<PlayerID, {
-    name: string;
-    isConnected: boolean;
-  }>;
+  players: LobbyPlayer[];     // Changed from Map for JSON serialization
   config: RoomConfig;
   createdAt: Date;
+  gameStarted: boolean;
 }

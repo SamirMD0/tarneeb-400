@@ -1,4 +1,4 @@
-// game.types.ts - Phase 2: Type System Foundation
+ // game.types.ts - Phase 2: Type System Foundation
 
 export type Suit = 'SPADES' | 'HEARTS' | 'DIAMONDS' | 'CLUBS';
 
