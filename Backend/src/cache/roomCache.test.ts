@@ -2,14 +2,14 @@
 
 import { describe, it, mock, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { RoomCache } from './roomCache.js';
+import { roomCache } from './roomCache.js';
 import { Room } from '../rooms/room.js';
-import { getRedisClient } from '../lib/redis.js';
+import { redis } from '../lib/redis.js';
 
-// Mock getRedisClient to return a mock client
+// Mock redis.getClient to return a mock client
 mock.module('../lib/redis.js', {
     namedExports: {
-        getRedisClient: mock.fn(),
+        redis: { getClient: mock.fn() },
     },
 });
 
@@ -28,7 +28,7 @@ describe('RoomCache', () => {
             mGet: mock.fn(),
         };
 
-        (getRedisClient as any).mockImplementation(() => mockClient);
+        (redis.getClient as any).mockImplementation(() => mockClient);
     });
 
     afterEach(() => {
@@ -39,7 +39,7 @@ describe('RoomCache', () => {
         const room = new Room(mockRoomId, mockConfig);
         room.addPlayer('p1', 'Player 1');
 
-        await RoomCache.cacheRoom(room);
+        await roomCache.cacheRoom(room);
 
         assert.strictEqual(mockClient.set.mock.callCount(), 1);
         const [key, value, options] = mockClient.set.mock.calls[0].arguments;
@@ -63,7 +63,7 @@ describe('RoomCache', () => {
 
         mockClient.get.mockResolvedValue(cachedData);
 
-        const room = await RoomCache.getRoom(mockRoomId);
+        const room = await roomCache.getRoom(mockRoomId);
 
         assert.ok(room instanceof Room);
         assert.strictEqual(room?.id, mockRoomId);
@@ -74,7 +74,7 @@ describe('RoomCache', () => {
     it('should return undefined if room not found in cache', async () => {
         mockClient.get.mockResolvedValue(null);
 
-        const room = await RoomCache.getRoom(mockRoomId);
+        const room = await roomCache.getRoom(mockRoomId);
         assert.strictEqual(room, undefined);
     });
 
@@ -99,7 +99,7 @@ describe('RoomCache', () => {
 
         mockClient.get.mockResolvedValue(cachedData);
 
-        const room = await RoomCache.getRoom(mockRoomId);
+        const room = await roomCache.getRoom(mockRoomId);
 
         assert.ok(room?.gameEngine);
         // Checking if state was injected (via our known hack/implementation in RoomCache)
@@ -108,17 +108,17 @@ describe('RoomCache', () => {
     });
 
     it('should delete room from cache', async () => {
-        await RoomCache.deleteRoom(mockRoomId);
+        await roomCache.deleteRoom(mockRoomId);
         assert.strictEqual(mockClient.del.mock.callCount(), 1);
         assert.strictEqual(mockClient.del.mock.calls[0].arguments[0], `room:${mockRoomId}`);
     });
 
     it('should degrade gracefully if Redis is unavailable', async () => {
-        (getRedisClient as any).mockImplementation(() => undefined);
+        (redis.getClient as any).mockImplementation(() => undefined);
 
         // Should not throw
-        await RoomCache.cacheRoom(new Room(mockRoomId, mockConfig));
-        const room = await RoomCache.getRoom(mockRoomId);
+        await roomCache.cacheRoom(new Room(mockRoomId, mockConfig));
+        const room = await roomCache.getRoom(mockRoomId);
 
         assert.strictEqual(room, undefined);
     });

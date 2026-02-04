@@ -3,7 +3,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import type { Suit } from '../types/game.types.js';
 
-// Subdocument schema for round history
+// SubDocument schema for round history
 export interface IRoundSnapshot {
     roundNumber: number;
     bidderId: string;
