@@ -4,7 +4,7 @@ import { describe, it, mock, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { Room } from './room.js';
 import type { RoomConfig } from '../types/room.types.js';
-import { RoomCache } from '../cache/roomCache.js';
+import { roomCache } from '../cache/roomCache.js';
 
 // Mock RoomCache to prevent Redis calls
 mock.module('../cache/roomCache.js', {
@@ -27,7 +27,7 @@ describe('Room - Phase 16 Async', () => {
   }
 
   beforeEach(() => {
-    (RoomCache.cacheRoom as any).mockImplementation(() => Promise.resolve());
+    (roomCache.cacheRoom as any).mockImplementation(() => Promise.resolve());
   });
 
   afterEach(() => {
@@ -52,7 +52,7 @@ describe('Room - Phase 16 Async', () => {
       assert.equal(result, true);
       assert.equal(room.players.size, 1);
       assert.equal(room.players.get('p1')?.name, 'Alice');
-      assert.equal((RoomCache.cacheRoom as any).mock.callCount(), 1);
+      assert.equal((roomCache.cacheRoom as any).mock.callCount(), 1);
     });
 
     it('should add multiple players up to 4', async () => {
@@ -100,7 +100,7 @@ describe('Room - Phase 16 Async', () => {
       const result = await room.startGame();
       assert.equal(result, true);
       assert.notEqual(room.gameEngine, undefined);
-      assert.ok((RoomCache.cacheRoom as any).mock.callCount() >= 4); // Saves on adds and start
+      assert.ok((roomCache.cacheRoom as any).mock.callCount() >= 4); // Saves on adds and start
     });
 
     it('should fail if less than 4 players', async () => {

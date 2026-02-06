@@ -4,7 +4,7 @@ import { describe, it, beforeEach, mock, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { RoomManager } from "./roomManager.js";
 import { RoomConfig } from "../types/room.types.js";
-import { roomcache } from "../cache/roomCache.js";
+import { roomCache } from "../cache/roomCache.js";
 
 // Mock RoomCache
 mock.module("../cache/roomCache.js", {
@@ -25,10 +25,10 @@ describe("RoomManager", () => {
     beforeEach(() => {
         manager = new RoomManager();
         // Reset mocks
-        (RoomCache.cacheRoom as any).mockImplementation(() => Promise.resolve());
-        (RoomCache.getRoom as any).mockImplementation(() => Promise.resolve(undefined));
-        (RoomCache.deleteRoom as any).mockImplementation(() => Promise.resolve());
-        (RoomCache.getAllActiveRooms as any).mockImplementation(() => Promise.resolve([]));
+        (roomCache.cacheRoom as any).mockImplementation(() => Promise.resolve());
+        (roomCache.getRoom as any).mockImplementation(() => Promise.resolve(undefined));
+        (roomCache.deleteRoom as any).mockImplementation(() => Promise.resolve());
+        (roomCache.getAllActiveRooms as any).mockImplementation(() => Promise.resolve([]));
     });
 
     afterEach(() => {
@@ -46,7 +46,7 @@ describe("RoomManager", () => {
             assert.ok(room);
             assert.ok(room.id.startsWith("room_"));
             assert.equal(room.config, defaultConfig);
-            assert.equal((RoomCache.cacheRoom as any).mock.callCount(), 1);
+            assert.equal((roomCache.cacheRoom as any).mock.callCount(), 1);
         });
 
         it("should create multiple rooms with unique IDs", async () => {
@@ -63,7 +63,7 @@ describe("RoomManager", () => {
             assert.notEqual(room1.id, room2.id);
 
             // Mock listRooms return
-            (RoomCache.getAllActiveRooms as any).mockResolvedValue([room1, room2]);
+            (roomCache.getAllActiveRooms as any).mockResolvedValue([room1, room2]);
             assert.equal(await manager.getRoomCount(), 2);
         });
     });
@@ -83,7 +83,7 @@ describe("RoomManager", () => {
 
         it("should try cache if not in local memory", async () => {
             const result = await manager.getRoom("missing_local");
-            assert.equal((RoomCache.getRoom as any).mock.callCount(), 1);
+            assert.equal((roomCache.getRoom as any).mock.callCount(), 1);
         });
     });
 
@@ -94,7 +94,7 @@ describe("RoomManager", () => {
 
             assert.equal(result, true);
             assert.equal(await manager.getRoom(room.id), undefined);
-            assert.equal((RoomCache.deleteRoom as any).mock.callCount(), 1);
+            assert.equal((roomCache.deleteRoom as any).mock.callCount(), 1);
         });
 
         it("should return false for non-existent room", async () => {
@@ -111,7 +111,7 @@ describe("RoomManager", () => {
 
         it("should return rooms from cache", async () => {
             const mockRooms = [{ id: 'r1' }, { id: 'r2' }];
-            (RoomCache.getAllActiveRooms as any).mockResolvedValue(mockRooms);
+            (roomCache.getAllActiveRooms as any).mockResolvedValue(mockRooms);
 
             const rooms = await manager.listRooms();
             assert.deepEqual(rooms, mockRooms);
@@ -130,7 +130,7 @@ describe("RoomManager", () => {
 
         it("should return room that is not full", async () => {
             const room = await manager.createRoom(defaultConfig);
-            (RoomCache.getAllActiveRooms as any).mockResolvedValue([room]); // Sync cache view
+            (roomCache.getAllActiveRooms as any).mockResolvedValue([room]); // Sync cache view
 
             await room.addPlayer("p1", "Player 1");
 
@@ -146,7 +146,7 @@ describe("RoomManager", () => {
             await fullRoom.addPlayer("p4", "Player 4");
 
             const emptyRoom = await manager.createRoom(defaultConfig);
-            (RoomCache.getAllActiveRooms as any).mockResolvedValue([fullRoom, emptyRoom]);
+            (roomCache.getAllActiveRooms as any).mockResolvedValue([fullRoom, emptyRoom]);
 
             const result = await manager.findAvailableRoom();
             assert.equal(result, emptyRoom);
@@ -164,23 +164,23 @@ describe("RoomManager", () => {
             const occupied = await manager.createRoom(defaultConfig);
             await occupied.addPlayer("p1", "Player 1");
 
-            (RoomCache.getAllActiveRooms as any).mockResolvedValue([room1, room2, occupied]);
+            (roomCache.getAllActiveRooms as any).mockResolvedValue([room1, room2, occupied]);
 
             const removed = await manager.removeEmptyRooms();
 
             assert.equal(removed, 2);
-            assert.equal((RoomCache.deleteRoom as any).mock.callCount(), 2);
+            assert.equal((roomCache.deleteRoom as any).mock.callCount(), 2);
         });
     });
 
     describe("clear", () => {
         it("should remove all rooms", async () => {
             const room1 = await manager.createRoom(defaultConfig);
-            (RoomCache.getAllActiveRooms as any).mockResolvedValue([room1]);
+            (roomCache.getAllActiveRooms as any).mockResolvedValue([room1]);
 
             await manager.clear();
 
-            assert.equal((RoomCache.deleteRoom as any).mock.callCount(), 1);
+            assert.equal((roomCache.deleteRoom as any).mock.callCount(), 1);
         });
     });
 });
