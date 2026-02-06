@@ -3,15 +3,10 @@
 import mongoose from 'mongoose';
 
 // Environment configuration with defaults
-const MONGO_URI = process.env.MONGO_URI;
 const MAX_POOL_SIZE = parseInt(process.env.MONGO_MAX_POOL_SIZE ?? '10', 10);
 const MIN_POOL_SIZE = parseInt(process.env.MONGO_MIN_POOL_SIZE ?? '2', 10);
 const RETRY_WRITES = process.env.MONGO_RETRY_WRITES !== 'false';
 const WRITE_CONCERN = process.env.MONGO_WRITE_CONCERN ?? 'majority';
-
-if (!MONGO_URI) {
-    throw new Error('MONGO_URI environment variable is not defined');
-}
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -62,7 +57,12 @@ export async function connectMongo(): Promise<typeof mongoose> {
 
     while (connectionAttempts < MAX_RETRY_ATTEMPTS) {
         try {
-            const conn = await mongoose.connect(MONGO_URI as string, mongooseOptions);
+            const uri = process.env.MONGO_URI;
+            if (!uri) {
+                throw new Error('MONGO_URI environment variable is not defined');
+            }
+
+            const conn = await mongoose.connect(uri, mongooseOptions);
             isConnected = true;
             connectionAttempts = 0; // Reset on success
             console.log(`MongoDB connected: ${conn.connection.host}`);

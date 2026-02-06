@@ -5,6 +5,9 @@ import { GameAction } from "./actions.js";
 import { applyAction } from "./reducer.js";
 import { saveGame } from "../services/gameHistory.service.js";
 import type { RoundSnapshot } from "../types/game.types.js";
+import { logger } from "../lib/logger.js";
+import { metrics } from "../lib/metrics.js";
+import { withTimingSync } from "../monitoring/performance.js";
 
 type GameListener = (state: GameState) => void;
 
@@ -33,7 +36,16 @@ export class GameEngine {
 
     public dispatch(action: GameAction): boolean {
         const prevState = this.state;
-        const nextState = applyAction(this.state, action);
+
+        // Phase 20: Measure reducer performance
+        const { result: nextState } = withTimingSync(
+            `reducer:${action.type}`,
+            () => applyAction(this.state, action),
+            {
+                slowThresholdMs: 10,
+                metricType: 'game_action'
+            }
+        );
 
         // If state reference changed, it means action was valid and applied
         if (nextState !== prevState) {
@@ -127,10 +139,11 @@ export class GameEngine {
                 this.startedAt,
                 this.rounds
             );
-            console.log(`Game ${this.roomId} persisted successfully`);
+            logger.info(`Game persisted successfully`, { roomId: this.roomId });
+            metrics.gameCompleted(winner);
         } catch (error) {
-            console.error(`Failed to persist game ${this.roomId}:`, error);
             // Don't throw - game can continue even if persistence fails
+            logger.error(`Failed to persist game`, { roomId: this.roomId, error });
         }
     }
 }

@@ -1,11 +1,13 @@
 // Backend/src/socket/socketMiddleware.ts - Phase 17: WebSocket Middleware
 
 import { Socket } from 'socket.io';
-import type { 
-    ClientToServerEvents, 
-    ServerToClientEvents, 
-    SocketData 
+import type {
+    ClientToServerEvents,
+    ServerToClientEvents,
+    SocketData
 } from '../types/socket.types.js';
+import { logger } from '../lib/logger.js';
+import { metrics } from '../lib/metrics.js';
 
 type SocketType = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
 type EventHandler = (socket: SocketType, ...args: any[]) => Promise<void> | void;
@@ -40,17 +42,17 @@ setInterval(() => {
 export function authMiddleware(socket: SocketType, next: (err?: Error) => void): void {
     // Placeholder: Accept all connections for now
     // In production, verify JWT token or session here
-    
+
     const token = socket.handshake.auth.token;
-    
+
     if (process.env.NODE_ENV === 'production' && !token) {
         // For now, just log a warning
-        console.warn(`[Auth] Socket ${socket.id} connected without token`);
+        logger.warn(`[Auth] Socket ${socket.id} connected without token`, { socketId: socket.id });
     }
-    
+
     // Store user info in socket data if authenticated
     socket.data.userId = socket.handshake.auth.userId || socket.id;
-    
+
     next();
 }
 
@@ -63,9 +65,9 @@ export function rateLimitMiddleware(socket: SocketType): (handler: EventHandler)
         return async (...args: any[]) => {
             const now = Date.now();
             const socketId = socket.id;
-            
+
             let limitData = rateLimitMap.get(socketId);
-            
+
             // Initialize or reset if window expired
             if (!limitData || now > limitData.resetTime) {
                 limitData = {
@@ -74,7 +76,7 @@ export function rateLimitMiddleware(socket: SocketType): (handler: EventHandler)
                 };
                 rateLimitMap.set(socketId, limitData);
             }
-            
+
             // Check if rate limit exceeded
             if (limitData.count >= RATE_LIMIT_MAX_ACTIONS) {
                 const timeUntilReset = Math.ceil((limitData.resetTime - now) / 1000);
@@ -84,10 +86,10 @@ export function rateLimitMiddleware(socket: SocketType): (handler: EventHandler)
                 });
                 return;
             }
-            
+
             // Increment counter
             limitData.count++;
-            
+
             // Execute handler
             await handler(socket, ...args);
         };
@@ -103,12 +105,19 @@ export function errorBoundary(handler: EventHandler): EventHandler {
         try {
             await handler(socket, ...args);
         } catch (error) {
-            console.error(`[Socket Error] Handler failed for ${socket.id}:`, error);
-            
-            // Send structured error response
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             const errorCode = (error as any).code || 'INTERNAL_ERROR';
-            
+
+            logger.error(`[Socket Error] Handler failed`, {
+                socketId: socket.id,
+                error: errorMessage,
+                code: errorCode,
+                stack: error instanceof Error ? error.stack : undefined
+            });
+
+            metrics.errorOccurred(errorCode, errorCode !== 'INTERNAL_ERROR');
+
+            // Send structured error response
             socket.emit('error', {
                 code: errorCode,
                 message: errorMessage,
@@ -142,7 +151,7 @@ export function validatePayload<T>(
                 });
                 return;
             }
-            
+
             await handler(socket, data);
         };
     };

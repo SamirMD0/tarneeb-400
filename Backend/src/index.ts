@@ -4,6 +4,10 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
+// Phase 20: Logging & Monitoring
+import { logger, lifecycle, logError } from './lib/logger.js';
+import { getMetrics, getMetricsContentType, httpRequestDuration } from './lib/metrics.js';
+
 // Phase 19: Environment validation
 import { validateEnv, getEnv } from './lib/env.js';
 
@@ -58,8 +62,32 @@ app.use(sanitizeMongoQueries);
 app.use(sanitizeXSS);
 app.use(preventHPP);
 
+// Phase 20: Request duration middleware
+app.use((req, res, next) => {
+    const end = httpRequestDuration.startTimer({
+        method: req.method,
+        route: req.path
+    });
+
+    res.on('finish', () => {
+        end({ status_code: String(res.statusCode) });
+    });
+
+    next();
+});
+
 // Routes
 app.use('/api', healthRouter);
+
+// Phase 20: Metrics Endpoint
+app.get('/metrics', async (req, res) => {
+    try {
+        res.set('Content-Type', getMetricsContentType());
+        res.end(await getMetrics());
+    } catch (err) {
+        res.status(500).end(err);
+    }
+});
 
 // Phase 19: 404 handler (after all routes)
 app.use(notFoundHandler);
@@ -68,17 +96,28 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 async function bootstrap(): Promise<void> {
-    await connectMongo();
-    await redis.connect();
+    try {
+        await connectMongo();
+        logger.info('Connected to MongoDB');
 
-    httpServer.listen(PORT, () => {
-        console.log(`✅ Server running on port ${PORT}`);
-        console.log(`   Environment: ${env.NODE_ENV}`);
-    });
+        await redis.connect();
+        logger.info('Connected to Redis');
+
+        httpServer.listen(PORT, () => {
+            logger.info(`✅ Server running on port ${PORT}`, {
+                environment: env.NODE_ENV,
+                port: PORT
+            });
+            lifecycle.serverStart(Number(PORT));
+        });
+    } catch (err) {
+        logger.error('Failed to initialize server dependencies', { error: err });
+        process.exit(1);
+    }
 }
 
 bootstrap().catch((err) => {
-    console.error('Failed to start server:', err);
+    logError.uncaught(err);
     process.exit(1);
 });
 

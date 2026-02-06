@@ -4,6 +4,8 @@ import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 import { BaseError, isOperationalError, normalizeError } from '../utils/errors.js';
 import { ZodError } from 'zod';
 import { getEnv } from '../lib/env.js';
+import { logger, logError } from '../lib/logger.js';
+import { metrics } from '../lib/metrics.js';
 
 /**
  * Error Response Format
@@ -32,8 +34,11 @@ export const errorHandler: ErrorRequestHandler = (
     // Convert to BaseError for consistent handling
     const normalizedError = normalizeError(err);
 
+    // Track error metric
+    metrics.errorOccurred(normalizedError.code, normalizedError.isOperational);
+
     // Log error
-    logError(normalizedError, req);
+    logErrorInternal(normalizedError, req);
 
     // Build error response
     const response: ErrorResponse = {
@@ -58,19 +63,15 @@ export const errorHandler: ErrorRequestHandler = (
 /**
  * Log error to console with context
  */
-function logError(error: BaseError, req: Request): void {
+function logErrorInternal(error: BaseError, req: Request): void {
     if (!getEnv().LOG_ERRORS) {
         return;
     }
 
     const logData = {
-        timestamp: new Date().toISOString(),
-        error: {
-            code: error.code,
-            message: error.message,
-            statusCode: error.statusCode,
-            isOperational: error.isOperational,
-        },
+        code: error.code,
+        statusCode: error.statusCode,
+        isOperational: error.isOperational,
         request: {
             method: req.method,
             path: req.path,
@@ -81,10 +82,12 @@ function logError(error: BaseError, req: Request): void {
     };
 
     if (error.statusCode >= 500) {
-        console.error('❌ SERVER ERROR:', JSON.stringify(logData, null, 2));
-        console.error('Stack:', error.stack);
+        logger.error(error.message, {
+            ...logData,
+            stack: error.stack
+        });
     } else if (error.statusCode >= 400) {
-        console.warn('⚠️  CLIENT ERROR:', JSON.stringify(logData, null, 2));
+        logger.warn(error.message, logData);
     }
 }
 
@@ -92,12 +95,12 @@ function logError(error: BaseError, req: Request): void {
  * Handle uncaught exceptions
  */
 export function handleUncaughtException(error: Error): void {
-    console.error('💥 UNCAUGHT EXCEPTION:', error);
-    console.error('Stack:', error.stack);
+    logError.uncaught(error);
+    metrics.errorOccurred('UNCAUGHT_EXCEPTION', false);
 
     // In production, attempt graceful shutdown
     if (getEnv().NODE_ENV === 'production') {
-        console.error('Shutting down due to uncaught exception...');
+        logger.error('Shutting down due to uncaught exception...');
         process.exit(1);
     }
 }
@@ -106,11 +109,12 @@ export function handleUncaughtException(error: Error): void {
  * Handle unhandled promise rejections
  */
 export function handleUnhandledRejection(reason: unknown, promise: Promise<unknown>): void {
-    console.error('💥 UNHANDLED REJECTION:', reason);
+    logError.unhandledRejection(reason);
+    metrics.errorOccurred('UNHANDLED_REJECTION', false);
 
     // In production, attempt graceful shutdown
     if (getEnv().NODE_ENV === 'production') {
-        console.error('Shutting down due to unhandled rejection...');
+        logger.error('Shutting down due to unhandled rejection...');
         process.exit(1);
     }
 }
