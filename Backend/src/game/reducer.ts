@@ -10,6 +10,8 @@ import {
   getPlayerIndex,
 } from "./rules.js";
 import type { Suit } from "../types/game.types.js";
+// Phase 19: Zod validation
+import { GameActionSchema } from "../middlewares/validator.js";
 
 // Phase 13: Valid suit validation helper
 const VALID_SUITS: Suit[] = ['SPADES', 'HEARTS', 'DIAMONDS', 'CLUBS'];
@@ -18,6 +20,13 @@ function isValidSuit(suit: unknown): suit is Suit {
 }
 
 export function applyAction(state: GameState, action: GameAction): GameState {
+  // Phase 19: Validate action with Zod before processing
+  const validation = GameActionSchema.safeParse(action);
+  if (!validation.success) {
+    console.error('[Reducer] Invalid action rejected:', validation.error.issues);
+    return state; // Reject invalid action, return unchanged state
+  }
+
   // Clone shallow state (engine-level immutability)
   const next: GameState = structuredClone(state);
 
