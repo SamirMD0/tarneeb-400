@@ -33,6 +33,7 @@ This document lists all error codes returned by the API.
 | `NOT_IN_ROOM` | Action requires being in a room |
 | `INVALID_ACTION` | Game action malformed or rejected by engine |
 | `GAME_NOT_STARTED` | Game action sent before game started |
+| `START_GAME_FAILED` | Failed to start game (e.g. not enough players) |
 | `INVALID_PAYLOAD` | Socket event payload validation failed |
 
 ## Error Response Format

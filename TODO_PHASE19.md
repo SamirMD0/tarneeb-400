@@ -132,20 +132,14 @@ function enhancedErrorBoundary(handler: EventHandler): EventHandler
 Why needed:
 Predictable error handling across all socket events.
 
-[ ] Add input sanitization
+[x] Add input sanitization
 
 File: Backend/src/middleware/sanitization.ts
-Missing:
-
-MongoDB injection protection
-
-XSS prevention
-
-HTTP parameter pollution protection
-
-import mongoSanitize from 'express-mongo-sanitize';
-import { clean } from 'xss-clean';
-import hpp from 'hpp';
+Completed:
+- Custom implementation using `express-mongo-sanitize` and regex-based XSS filtering.
+- Replaces keys starting with `$` and removes dots.
+- Strips HTML tags and `javascript:` protocol.
+- usage of `xss-clean` and `hpp` packages was replaced by custom logic in `sanitization.ts` to reduce dependencies and allow finer control.
 
 
 Why needed:

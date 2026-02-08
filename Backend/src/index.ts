@@ -2,7 +2,6 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
-import { Server } from 'socket.io';
 
 // Phase 20: Logging & Monitoring
 import { logger, lifecycle, logError } from './lib/logger.js';
@@ -30,6 +29,10 @@ import { connectMongo } from './lib/mongoose.js';
 import { redis } from './lib/redis.js';
 import healthRouter from './routes/health.js';
 
+// Phase 17/20: Socket.IO setup with handlers
+import { initializeSocketServer } from './sockets/socketServer.js';
+import { registerHandlers } from './sockets/socketHandlers.js';
+
 // Phase 19: Fail-fast environment validation
 const env = validateEnv();
 const PORT = env.PORT;
@@ -40,12 +43,10 @@ process.on('unhandledRejection', handleUnhandledRejection);
 
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
-    cors: {
-        origin: env.CORS_ORIGIN,
-        methods: ['GET', 'POST'],
-    },
-});
+
+// Phase 17/20: Initialize Socket.IO and register handlers
+const io = initializeSocketServer(httpServer);
+registerHandlers(io); // ✅ CRITICAL: Register socket handlers for Phase 20 monitoring
 
 // Phase 19: Security headers (must be first)
 app.use(securityHeaders);
@@ -62,11 +63,16 @@ app.use(sanitizeMongoQueries);
 app.use(sanitizeXSS);
 app.use(preventHPP);
 
-// Phase 20: Request duration middleware
+// Phase 20: Request duration middleware with FIXED cardinality
 app.use((req, res, next) => {
+    // ✅ FIX: Use req.route?.path (bounded) instead of req.path (unbounded)
+    // req.path can be ANY user input: /users/123, /users/456, etc. = infinite cardinality
+    // req.route?.path is the Express route pattern: /users/:id = bounded cardinality
+    const route = req.route?.path || req.path.split('/').slice(0, 3).join('/') || 'unknown';
+    
     const end = httpRequestDuration.startTimer({
         method: req.method,
-        route: req.path
+        route: route
     });
 
     res.on('finish', () => {

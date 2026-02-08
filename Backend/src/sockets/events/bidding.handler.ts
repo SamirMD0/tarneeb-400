@@ -1,12 +1,12 @@
-// Backend/src/sockets/events/bidding.handler.ts - Phase 18: Bidding Event Handlers
+// Backend/src/sockets/events/bidding.handler.ts - Phase 20: Performance Monitoring
 
 import { Server, Socket } from 'socket.io';
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from '../../types/socket.types.js';
 import type { GameAction } from '../../game/actions.js';
 import type { RoomManager } from '../../rooms/roomManager.js';
 import { applyMiddleware } from '../socketMiddleware.js';
+import { metrics } from '../../lib/metrics.js';
 
-// Handler for 'place_bid' event
 type SocketType = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
 
 export function registerBiddingHandlers(
@@ -14,13 +14,34 @@ export function registerBiddingHandlers(
     io: Server<ClientToServerEvents, ServerToClientEvents, {}, SocketData>,
     roomManager: RoomManager
 ) {
-    const placeBid = applyMiddleware(socket, (socket, data) => handlePlaceBid(socket, data, io, roomManager));
-    const passBid = applyMiddleware(socket, (socket, data) => handlePassBid(socket, data, io, roomManager));
-    const setTrump = applyMiddleware(socket, (socket, data) => handleSetTrump(socket, data, io, roomManager));
+    // ✅ Phase 20: Wrap handlers with performance timing
+    const placeBid = wrapWithTiming('place_bid',
+        applyMiddleware(socket, (socket, data) => handlePlaceBid(socket, data, io, roomManager))
+    );
+    const passBid = wrapWithTiming('pass_bid',
+        applyMiddleware(socket, (socket, data) => handlePassBid(socket, data, io, roomManager))
+    );
+    const setTrump = wrapWithTiming('set_trump',
+        applyMiddleware(socket, (socket, data) => handleSetTrump(socket, data, io, roomManager))
+    );
 
     socket.on('place_bid', (data: any) => placeBid(socket, data));
     socket.on('pass_bid', (data: any) => passBid(socket, data));
     socket.on('set_trump', (data: any) => setTrump(socket, data));
+}
+
+/**
+ * Phase 20: Performance timing wrapper for socket events
+ */
+function wrapWithTiming(eventName: string, handler: any): any {
+    return async (...args: any[]) => {
+        const end = metrics.timeSocketEvent(eventName);
+        try {
+            await handler(...args);
+        } finally {
+            end();
+        }
+    };
 }
 
 async function handlePlaceBid(

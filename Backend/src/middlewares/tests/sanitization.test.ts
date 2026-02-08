@@ -1,9 +1,12 @@
 // Backend/src/middleware/sanitization.test.ts - Sanitization Tests
 
 import { Request, Response, NextFunction } from 'express';
-import { sanitizeXSS, preventHPP, securityHeaders } from '../sanitization.js';
+import { test, suite, beforeEach } from 'node:test';
+import assert from 'node:assert/strict';
+import { mock } from 'node:test';
+import { sanitizeXSS, preventHPP, securityHeaders, sanitizeMongoQueries } from '../sanitization.js';
 
-describe('sanitizeXSS', () => {
+suite('sanitizeXSS', () => {
     let mockRequest: Partial<Request>;
     let mockResponse: Partial<Response>;
     let mockNext: NextFunction;
@@ -15,11 +18,11 @@ describe('sanitizeXSS', () => {
             params: {},
         };
         mockResponse = {};
-        mockNext = jest.fn();
+        mockNext = mock.fn() as unknown as NextFunction;
     });
 
-    describe('Body Sanitization', () => {
-        it('should remove script tags from body strings', () => {
+    suite('Body Sanitization', () => {
+        test('should remove script tags from body strings', () => {
             mockRequest.body = {
                 name: '<script>alert("xss")</script>John',
                 bio: 'Hello<b>World</b>',
@@ -31,11 +34,11 @@ describe('sanitizeXSS', () => {
                 mockNext
             );
 
-            expect(mockRequest.body.name).not.toContain('<script>');
-            expect(mockRequest.body.name).toContain('John');
+            assert.equal(String((mockRequest.body as any).name).includes('<script>'), false);
+            assert.equal(String((mockRequest.body as any).name).includes('John'), true);
         });
 
-        it('should remove javascript: protocol', () => {
+        test('should remove javascript: protocol', () => {
             mockRequest.body = {
                 url: 'javascript:alert(1)',
             };
@@ -46,10 +49,10 @@ describe('sanitizeXSS', () => {
                 mockNext
             );
 
-            expect(mockRequest.body.url).not.toContain('javascript:');
+            assert.equal(String((mockRequest.body as any).url).includes('javascript:'), false);
         });
 
-        it('should remove event handlers', () => {
+        test('should remove event handlers', () => {
             mockRequest.body = {
                 input: 'onclick=alert(1) value',
             };
@@ -60,10 +63,10 @@ describe('sanitizeXSS', () => {
                 mockNext
             );
 
-            expect(mockRequest.body.input).not.toContain('onclick=');
+            assert.equal(String((mockRequest.body as any).input).includes('onclick='), false);
         });
 
-        it('should sanitize nested objects', () => {
+        test('should sanitize nested objects', () => {
             mockRequest.body = {
                 user: {
                     name: '<img src=x onerror=alert(1)>',
@@ -79,11 +82,11 @@ describe('sanitizeXSS', () => {
                 mockNext
             );
 
-            expect(mockRequest.body.user.name).not.toContain('<img');
-            expect(mockRequest.body.user.profile.bio).not.toContain('<script>');
+            assert.equal(String((mockRequest.body as any).user.name).includes('<img'), false);
+            assert.equal(String((mockRequest.body as any).user.profile.bio).includes('<script>'), false);
         });
 
-        it('should preserve safe values', () => {
+        test('should preserve safe values', () => {
             mockRequest.body = {
                 name: 'John Doe',
                 age: 30,
@@ -99,14 +102,14 @@ describe('sanitizeXSS', () => {
                 mockNext
             );
 
-            expect(mockRequest.body.name).toBe(original.name);
-            expect(mockRequest.body.age).toBe(original.age);
-            expect(mockRequest.body.active).toBe(original.active);
+            assert.equal((mockRequest.body as any).name, original.name);
+            assert.equal((mockRequest.body as any).age, original.age);
+            assert.equal((mockRequest.body as any).active, original.active);
         });
     });
 
-    describe('Query Sanitization', () => {
-        it('should sanitize query parameters', () => {
+    suite('Query Sanitization', () => {
+        test('should sanitize query parameters', () => {
             mockRequest.query = {
                 search: '<script>alert(1)</script>query',
                 page: '1',
@@ -118,13 +121,13 @@ describe('sanitizeXSS', () => {
                 mockNext
             );
 
-            expect(mockRequest.query.search).not.toContain('<script>');
-            expect(mockRequest.query.page).toBe('1');
+            assert.equal(String((mockRequest.query as any).search).includes('<script>'), false);
+            assert.equal((mockRequest.query as any).page, '1');
         });
     });
 
-    describe('Params Sanitization', () => {
-        it('should sanitize route parameters', () => {
+    suite('Params Sanitization', () => {
+        test('should sanitize route parameters', () => {
             mockRequest.params = {
                 id: '<script>123</script>',
             };
@@ -135,23 +138,23 @@ describe('sanitizeXSS', () => {
                 mockNext
             );
 
-            expect(mockRequest.params.id).not.toContain('<script>');
+            assert.equal(String((mockRequest.params as any).id).includes('<script>'), false);
         });
     });
 
-    it('should call next after sanitization', () => {
+    test('should call next after sanitization', () => {
         sanitizeXSS(
             mockRequest as Request,
             mockResponse as Response,
             mockNext
         );
 
-        expect(mockNext).toHaveBeenCalledTimes(1);
-        expect(mockNext).toHaveBeenCalledWith();
+        assert.equal((mockNext as any).mock.callCount(), 1);
+        assert.equal((mockNext as any).mock.calls[0].arguments.length, 0);
     });
 });
 
-describe('preventHPP', () => {
+suite('preventHPP', () => {
     let mockRequest: Partial<Request>;
     let mockResponse: Partial<Response>;
     let mockNext: NextFunction;
@@ -159,10 +162,10 @@ describe('preventHPP', () => {
     beforeEach(() => {
         mockRequest = { query: {} };
         mockResponse = {};
-        mockNext = jest.fn();
+        mockNext = mock.fn() as unknown as NextFunction;
     });
 
-    it('should keep single query parameters unchanged', () => {
+    test('should keep single query parameters unchanged', () => {
         mockRequest.query = {
             page: '1',
             limit: '10',
@@ -174,13 +177,13 @@ describe('preventHPP', () => {
             mockNext
         );
 
-        expect(mockRequest.query).toEqual({
+        assert.deepEqual(mockRequest.query, {
             page: '1',
             limit: '10',
         });
     });
 
-    it('should take first value of duplicate parameters', () => {
+    test('should take first value of duplicate parameters', () => {
         mockRequest.query = {
             page: ['1', '2', '3'],
         };
@@ -191,10 +194,10 @@ describe('preventHPP', () => {
             mockNext
         );
 
-        expect(mockRequest.query.page).toBe('1');
+        assert.equal((mockRequest.query as any).page, '1');
     });
 
-    it('should allow whitelisted duplicate parameters', () => {
+    test('should allow whitelisted duplicate parameters', () => {
         mockRequest.query = {
             sort: ['name', 'date'],
         };
@@ -206,10 +209,10 @@ describe('preventHPP', () => {
         );
 
         // Whitelisted params can remain as arrays
-        expect(Array.isArray(mockRequest.query.sort)).toBe(true);
+        assert.equal(Array.isArray((mockRequest.query as any).sort), true);
     });
 
-    it('should handle mixed single and duplicate parameters', () => {
+    test('should handle mixed single and duplicate parameters', () => {
         mockRequest.query = {
             page: '1',
             filter: ['a', 'b'],
@@ -222,108 +225,100 @@ describe('preventHPP', () => {
             mockNext
         );
 
-        expect(mockRequest.query.page).toBe('1');
+        assert.equal((mockRequest.query as any).page, '1');
+        assert.equal((mockRequest.query as any).filter, 'a');
+        assert.equal((mockRequest.query as any).sort, 'name');
     });
 
-    it('should call next after processing', () => {
+    test('should call next after processing', () => {
         preventHPP(
             mockRequest as Request,
             mockResponse as Response,
             mockNext
         );
 
-        expect(mockNext).toHaveBeenCalledTimes(1);
+        assert.equal((mockNext as any).mock.callCount(), 1);
     });
 });
 
-describe('securityHeaders', () => {
+suite('securityHeaders', () => {
     let mockRequest: Partial<Request>;
     let mockResponse: Partial<Response>;
     let mockNext: NextFunction;
-    let setHeaderMock: jest.Mock;
+    let setHeaderMock: any;
 
     beforeEach(() => {
-        setHeaderMock = jest.fn();
+        setHeaderMock = mock.fn();
         mockRequest = {};
         mockResponse = {
             setHeader: setHeaderMock,
         };
-        mockNext = jest.fn();
+        mockNext = mock.fn() as unknown as NextFunction;
     });
 
-    it('should set X-Frame-Options header', () => {
+    test('should set X-Frame-Options header', () => {
         securityHeaders(
             mockRequest as Request,
             mockResponse as Response,
             mockNext
         );
 
-        expect(setHeaderMock).toHaveBeenCalledWith('X-Frame-Options', 'DENY');
+        assert.deepEqual(setHeaderMock.mock.calls[0].arguments, ['X-Frame-Options', 'DENY']);
     });
 
-    it('should set X-Content-Type-Options header', () => {
+    test('should set X-Content-Type-Options header', () => {
         securityHeaders(
             mockRequest as Request,
             mockResponse as Response,
             mockNext
         );
 
-        expect(setHeaderMock).toHaveBeenCalledWith(
-            'X-Content-Type-Options',
-            'nosniff'
-        );
+        assert.deepEqual(setHeaderMock.mock.calls[1].arguments, ['X-Content-Type-Options', 'nosniff']);
     });
 
-    it('should set X-XSS-Protection header', () => {
+    test('should set X-XSS-Protection header', () => {
         securityHeaders(
             mockRequest as Request,
             mockResponse as Response,
             mockNext
         );
 
-        expect(setHeaderMock).toHaveBeenCalledWith(
-            'X-XSS-Protection',
-            '1; mode=block'
-        );
+        assert.deepEqual(setHeaderMock.mock.calls[2].arguments, ['X-XSS-Protection', '1; mode=block']);
     });
 
-    it('should set Referrer-Policy header', () => {
+    test('should set Referrer-Policy header', () => {
         securityHeaders(
             mockRequest as Request,
             mockResponse as Response,
             mockNext
         );
 
-        expect(setHeaderMock).toHaveBeenCalledWith(
-            'Referrer-Policy',
-            'strict-origin-when-cross-origin'
-        );
+        assert.deepEqual(setHeaderMock.mock.calls[3].arguments, ['Referrer-Policy', 'strict-origin-when-cross-origin']);
     });
 
-    it('should set Content-Security-Policy header', () => {
+    test('should set Content-Security-Policy header', () => {
         securityHeaders(
             mockRequest as Request,
             mockResponse as Response,
             mockNext
         );
 
-        expect(setHeaderMock).toHaveBeenCalledWith(
-            'Content-Security-Policy',
-            expect.stringContaining("default-src 'self'")
-        );
+        const args = setHeaderMock.mock.calls[4].arguments;
+        assert.equal(args[0], 'Content-Security-Policy');
+        assert.equal(String(args[1]).includes("default-src 'self'"), true);
     });
 
-    it('should call next after setting headers', () => {
+    test('should call next after setting headers', () => {
         securityHeaders(
             mockRequest as Request,
             mockResponse as Response,
             mockNext
         );
 
-        expect(mockNext).toHaveBeenCalledTimes(1);
+        assert.equal((mockNext as any).mock.callCount(), 1);
     });
 
-    it('should set all security headers', () => {
+    test('should set all security headers', () => {
         securityHeaders(
             mockRequest as Request,
             mockResponse as Response,
@@ -331,14 +326,13 @@ describe('securityHeaders', () => {
         );
 
         // Should set at least 5 security headers
-        expect(setHeaderMock).toHaveBeenCalledTimes(5);
+        assert.equal(setHeaderMock.mock.callCount(), 5);
     });
 });
 
-describe('MongoDB Sanitization', () => {
-    it('should be exported for use', () => {
-        const { sanitizeMongoQueries } = require('./sanitization.js');
-        expect(sanitizeMongoQueries).toBeDefined();
-        expect(typeof sanitizeMongoQueries).toBe('function');
+suite('MongoDB Sanitization', () => {
+    test('should be exported for use', () => {
+        assert.ok(sanitizeMongoQueries);
+        assert.equal(typeof sanitizeMongoQueries, 'function');
     });
 });

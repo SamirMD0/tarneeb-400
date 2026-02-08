@@ -43,6 +43,16 @@ export type PlayCardAction = {
   card: Card;
 };
 
+export type GameAction =
+  | BidAction
+  | PassAction
+  | TrumpAction
+  | PlayCardAction
+  | { type: 'END_TRICK' }
+  | { type: 'END_ROUND' }
+  | { type: 'START_BIDDING' }
+  | { type: 'RESET_GAME' };
+
 // Phase 15: Round snapshot for game history persistence
 export interface RoundSnapshot {
   roundNumber: number;

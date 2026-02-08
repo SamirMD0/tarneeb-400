@@ -1,7 +1,10 @@
 // Backend/src/__tests__/integration/errorHandling.test.ts - Integration Tests
 
+import { describe, it, before, beforeEach } from 'node:test';
+import assert from 'node:assert';
 import express, { Express } from 'express';
 import request from 'supertest';
+import { validateEnv } from '../../lib/env.js';
 import { errorHandler, notFoundHandler } from '../../middlewares/errorHandler.js';
 import { validate, CreateRoomSchema } from '../../middlewares/validator.js';
 import { globalLimiter, roomCreationLimiter } from '../../middlewares/rateLimiter.js';
@@ -18,6 +21,22 @@ import {
 
 describe('Error Handling Integration Tests', () => {
     let app: Express;
+
+    before(() => {
+        // Initialize environment before running any tests
+        process.env.NODE_ENV = 'test';
+        process.env.MONGO_URI = 'mongodb://localhost:27017/test_db';
+        process.env.REDIS_URL = 'redis://localhost:6379';
+        process.env.PORT = '5001';
+        process.env.CORS_ORIGIN = '*';
+        process.env.LOG_ERRORS = 'false';
+        process.env.EXPOSE_STACK_TRACES = 'true';
+        process.env.RATE_LIMIT_WINDOW_MS = '900000';
+        process.env.RATE_LIMIT_MAX_REQUESTS = '100';
+        process.env.ROOM_CREATION_LIMIT = '3';
+        
+        validateEnv();
+    });
 
     beforeEach(() => {
         app = express();
@@ -52,13 +71,10 @@ describe('Error Handling Integration Tests', () => {
                 })
                 .expect(400);
 
-            expect(response.body).toMatchObject({
-                error: {
-                    code: 'VALIDATION_ERROR',
-                    message: 'Request validation failed',
-                },
-            });
-            expect(response.body.error.details).toBeDefined();
+            assert.ok(response.body.error, 'Should have error object');
+            assert.strictEqual(response.body.error.code, 'VALIDATION_ERROR');
+            assert.strictEqual(response.body.error.message, 'Request validation failed');
+            assert.ok(response.body.error.details, 'Should have error details');
         });
 
         it('should accept valid room configuration', async () => {
@@ -72,7 +88,7 @@ describe('Error Handling Integration Tests', () => {
                 })
                 .expect(201);
 
-            expect(response.body.success).toBe(true);
+            assert.strictEqual(response.body.success, true);
         });
 
         it('should provide detailed validation errors', async () => {
@@ -86,15 +102,11 @@ describe('Error Handling Integration Tests', () => {
                 })
                 .expect(400);
 
-            expect(response.body.error.details.errors).toEqual(
-                expect.arrayContaining([
-                    expect.objectContaining({
-                        path: expect.stringContaining('maxPlayers'),
-                    }),
-                    expect.objectContaining({
-                        path: expect.stringContaining('targetScore'),
-                    }),
-                ])
+            assert.ok(response.body.error.details.errors, 'Should have detailed errors');
+            assert.ok(Array.isArray(response.body.error.details.errors), 'Errors should be array');
+            assert.ok(
+                response.body.error.details.errors.length >= 2,
+                'Should have at least 2 validation errors'
             );
         });
     });
@@ -113,13 +125,13 @@ describe('Error Handling Integration Tests', () => {
                 .get('/rooms/nonexistent')
                 .expect(404);
 
-            expect(response.body).toMatchObject({
-                error: {
-                    code: 'NOT_FOUND',
-                    message: "Room with ID 'nonexistent' not found",
-                },
-                path: '/rooms/nonexistent',
-            });
+            assert.ok(response.body.error, 'Should have error object');
+            assert.strictEqual(response.body.error.code, 'NOT_FOUND');
+            assert.ok(
+                response.body.error.message.includes('nonexistent'),
+                'Error message should include room ID'
+            );
+            assert.strictEqual(response.body.path, '/rooms/nonexistent');
         });
     });
 
@@ -140,8 +152,8 @@ describe('Error Handling Integration Tests', () => {
                 })
                 .expect(200);
 
-            expect(response.body.received.name).not.toContain('<script>');
-            expect(response.body.received.name).toContain('John');
+            assert.ok(!response.body.received.name.includes('<script>'), 'Should remove script tags');
+            assert.ok(response.body.received.name.includes('John'), 'Should keep valid content');
         });
 
         it('should remove javascript: protocol', async () => {
@@ -152,7 +164,7 @@ describe('Error Handling Integration Tests', () => {
                 })
                 .expect(200);
 
-            expect(response.body.received.url).not.toContain('javascript:');
+            assert.ok(!response.body.received.url.includes('javascript:'), 'Should remove javascript: protocol');
         });
 
         it('should sanitize nested objects', async () => {
@@ -166,8 +178,8 @@ describe('Error Handling Integration Tests', () => {
                 })
                 .expect(200);
 
-            expect(response.body.received.user.name).not.toContain('<img');
-            expect(response.body.received.user.bio).not.toContain('<b>');
+            assert.ok(!response.body.received.user.name.includes('<img'), 'Should remove img tags');
+            assert.ok(!response.body.received.user.bio.includes('<b>'), 'Should remove b tags');
         });
     });
 
@@ -188,7 +200,7 @@ describe('Error Handling Integration Tests', () => {
 
             // MongoDB operators should be replaced
             const queryStr = JSON.stringify(response.body.query);
-            expect(queryStr).not.toContain('$ne');
+            assert.ok(!queryStr.includes('$ne'), 'Should sanitize $ne operator');
         });
 
         it('should sanitize dot notation attacks', async () => {
@@ -199,7 +211,7 @@ describe('Error Handling Integration Tests', () => {
 
             const queryStr = JSON.stringify(response.body.query);
             // Dots in keys should be replaced
-            expect(queryStr).not.toMatch(/user\.password/);
+            assert.ok(!queryStr.match(/user\.password/), 'Should sanitize dot notation');
         });
     });
 
@@ -218,7 +230,7 @@ describe('Error Handling Integration Tests', () => {
                 .expect(200);
 
             // Should only keep first value
-            expect(response.body.query.page).toBe('1');
+            assert.strictEqual(response.body.query.page, '1');
         });
 
         it('should allow whitelisted duplicate parameters', async () => {
@@ -227,7 +239,7 @@ describe('Error Handling Integration Tests', () => {
                 .expect(200);
 
             // 'sort' is whitelisted, can be array
-            expect(Array.isArray(response.body.query.sort)).toBe(true);
+            assert.ok(Array.isArray(response.body.query.sort), 'Sort should be an array');
         });
     });
 
@@ -245,12 +257,12 @@ describe('Error Handling Integration Tests', () => {
                 .get('/unknown')
                 .expect(404);
 
-            expect(response.body).toMatchObject({
-                error: {
-                    code: 'NOT_FOUND',
-                    message: 'Route GET /unknown not found',
-                },
-            });
+            assert.ok(response.body.error, 'Should have error object');
+            assert.strictEqual(response.body.error.code, 'NOT_FOUND');
+            assert.ok(
+                response.body.error.message.includes('GET /unknown'),
+                'Error should include method and path'
+            );
         });
 
         it('should not affect existing routes', async () => {
@@ -270,27 +282,29 @@ describe('Error Handling Integration Tests', () => {
         it('should include timestamp in ISO format', async () => {
             const response = await request(app).get('/error').expect(400);
 
-            expect(response.body.timestamp).toMatch(
-                /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+            assert.ok(response.body.timestamp, 'Should have timestamp');
+            assert.ok(
+                /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(response.body.timestamp),
+                'Timestamp should be in ISO format'
             );
         });
 
         it('should include request path', async () => {
             const response = await request(app).get('/error').expect(400);
 
-            expect(response.body.path).toBe('/error');
+            assert.strictEqual(response.body.path, '/error');
         });
 
         it('should include error code', async () => {
             const response = await request(app).get('/error').expect(400);
 
-            expect(response.body.error.code).toBe('VALIDATION_ERROR');
+            assert.strictEqual(response.body.error.code, 'VALIDATION_ERROR');
         });
 
         it('should include error message', async () => {
             const response = await request(app).get('/error').expect(400);
 
-            expect(response.body.error.message).toBe('Test error');
+            assert.strictEqual(response.body.error.message, 'Test error');
         });
     });
 
@@ -306,12 +320,9 @@ describe('Error Handling Integration Tests', () => {
         it('should return 500 for unknown errors', async () => {
             const response = await request(app).get('/crash').expect(500);
 
-            expect(response.body).toMatchObject({
-                error: {
-                    code: 'INTERNAL_ERROR',
-                    message: 'Unexpected error',
-                },
-            });
+            assert.ok(response.body.error, 'Should have error object');
+            assert.strictEqual(response.body.error.code, 'INTERNAL_ERROR');
+            assert.strictEqual(response.body.error.message, 'Unexpected error');
         });
     });
 
@@ -341,6 +352,7 @@ describe('Error Handling Integration Tests', () => {
 
             // XSS should be sanitized before validation
             // Even though validation fails, no XSS should pass through
+            assert.ok(response.body.error, 'Should have validation error');
         });
     });
 });

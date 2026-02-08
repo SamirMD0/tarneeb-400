@@ -4,7 +4,11 @@
  * Base error class for all application errors
  * Provides consistent structure for error handling
  */
-export class BaseError extends Error {
+/**
+ * Base error class for all application errors
+ * Provides consistent structure for error handling
+ */
+export abstract class GameError extends Error {
     public readonly statusCode: number;
     public readonly code: string;
     public readonly isOperational: boolean;
@@ -29,10 +33,13 @@ export class BaseError extends Error {
     }
 }
 
+// Alias for backward compatibility if needed, but we should migrate
+export type BaseError = GameError;
+
 /**
  * 400 Bad Request - Client sent invalid data
  */
-export class ValidationError extends BaseError {
+export class ValidationError extends GameError {
     constructor(message: string, details?: unknown) {
         super(message, 400, 'VALIDATION_ERROR', true, details);
     }
@@ -41,16 +48,19 @@ export class ValidationError extends BaseError {
 /**
  * 401 Unauthorized - Authentication required or failed
  */
-export class AuthError extends BaseError {
+export class UnauthorizedError extends GameError {
     constructor(message: string = 'Authentication required') {
         super(message, 401, 'UNAUTHORIZED', true);
     }
 }
 
+// Alias for backward compatibility
+export const AuthError = UnauthorizedError;
+
 /**
  * 403 Forbidden - Authenticated but not authorized
  */
-export class ForbiddenError extends BaseError {
+export class ForbiddenError extends GameError {
     constructor(message: string = 'Access forbidden') {
         super(message, 403, 'FORBIDDEN', true);
     }
@@ -59,7 +69,7 @@ export class ForbiddenError extends BaseError {
 /**
  * 404 Not Found - Resource does not exist
  */
-export class NotFoundError extends BaseError {
+export class NotFoundError extends GameError {
     constructor(resource: string = 'Resource', id?: string) {
         const message = id ? `${resource} with ID '${id}' not found` : `${resource} not found`;
         super(message, 404, 'NOT_FOUND', true);
@@ -69,16 +79,25 @@ export class NotFoundError extends BaseError {
 /**
  * 409 Conflict - Resource state conflict
  */
-export class ConflictError extends BaseError {
+export class ConflictError extends GameError {
     constructor(message: string) {
         super(message, 409, 'CONFLICT', true);
     }
 }
 
 /**
+ * 422 State Error - Invalid state transition
+ */
+export class StateError extends GameError {
+    constructor(message: string, details?: unknown) {
+        super(message, 422, 'STATE_ERROR', true, details);
+    }
+}
+
+/**
  * 429 Too Many Requests - Rate limit exceeded
  */
-export class RateLimitError extends BaseError {
+export class RateLimitError extends GameError {
     constructor(message: string = 'Too many requests, please try again later') {
         super(message, 429, 'RATE_LIMIT_EXCEEDED', true);
     }
@@ -87,7 +106,7 @@ export class RateLimitError extends BaseError {
 /**
  * 500 Internal Server Error - Unexpected server error
  */
-export class InternalError extends BaseError {
+export class InternalError extends GameError {
     constructor(message: string = 'Internal server error', details?: unknown) {
         super(message, 500, 'INTERNAL_ERROR', false, details);
     }
@@ -96,7 +115,7 @@ export class InternalError extends BaseError {
 /**
  * 500 Game Engine Error - Game state corruption or invalid transition
  */
-export class GameEngineError extends BaseError {
+export class GameEngineError extends GameError {
     constructor(message: string, details?: unknown) {
         super(message, 500, 'GAME_ENGINE_ERROR', false, details);
     }
@@ -105,7 +124,7 @@ export class GameEngineError extends BaseError {
 /**
  * 503 Service Unavailable - External dependency failure
  */
-export class ServiceUnavailableError extends BaseError {
+export class ServiceUnavailableError extends GameError {
     constructor(service: string) {
         super(`${service} is currently unavailable`, 503, 'SERVICE_UNAVAILABLE', true);
     }
@@ -115,17 +134,17 @@ export class ServiceUnavailableError extends BaseError {
  * Helper to check if error is operational (expected) vs programming error
  */
 export function isOperationalError(error: Error): boolean {
-    if (error instanceof BaseError) {
+    if (error instanceof GameError) {
         return error.isOperational;
     }
     return false;
 }
 
 /**
- * Convert any error to BaseError for consistent handling
+ * Convert any error to GameError for consistent handling
  */
-export function normalizeError(error: unknown): BaseError {
-    if (error instanceof BaseError) {
+export function normalizeError(error: unknown): GameError {
+    if (error instanceof GameError) {
         return error;
     }
 
@@ -137,4 +156,13 @@ export function normalizeError(error: unknown): BaseError {
     }
 
     return new InternalError('Unknown error occurred', { error });
+}
+
+/**
+ * Generic business logic error with custom code
+ */
+export class BusinessError extends GameError {
+    constructor(message: string, code: string, statusCode: number = 400) {
+        super(message, statusCode, code, true);
+    }
 }

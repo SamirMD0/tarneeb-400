@@ -1,13 +1,12 @@
-// Backend/src/sockets/events/playing.handler.ts - Phase 18: Playing Event Handlers
+// Backend/src/sockets/events/playing.handler.ts - Phase 20: Performance Monitoring
 
 import { Server, Socket } from 'socket.io';
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from '../../types/socket.types.js';
 import type { GameAction } from '../../game/actions.js';
 import type { RoomManager } from '../../rooms/roomManager.js';
 import { applyMiddleware } from '../socketMiddleware.js';
+import { metrics } from '../../lib/metrics.js';
 
-// Handler for 'play_card' and auto-triggers
-// (END_TRICK, END_ROUND)
 type SocketType = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
 
 export function registerPlayingHandlers(
@@ -15,8 +14,26 @@ export function registerPlayingHandlers(
     io: Server<ClientToServerEvents, ServerToClientEvents, {}, SocketData>,
     roomManager: RoomManager
 ) {
-    const playCard = applyMiddleware(socket, (socket, data) => handlePlayCard(socket, data, io, roomManager));
+    // ✅ Phase 20: Wrap handler with performance timing
+    const playCard = wrapWithTiming('play_card',
+        applyMiddleware(socket, (socket, data) => handlePlayCard(socket, data, io, roomManager))
+    );
+    
     socket.on('play_card', (data: any) => playCard(socket, data));
+}
+
+/**
+ * Phase 20: Performance timing wrapper for socket events
+ */
+function wrapWithTiming(eventName: string, handler: any): any {
+    return async (...args: any[]) => {
+        const end = metrics.timeSocketEvent(eventName);
+        try {
+            await handler(...args);
+        } finally {
+            end();
+        }
+    };
 }
 
 async function handlePlayCard(

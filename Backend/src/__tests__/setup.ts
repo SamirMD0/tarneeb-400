@@ -1,4 +1,5 @@
 // Backend/src/__tests__/setup.ts - Test Configuration
+import { jest } from '@jest/globals';
 
 // Set test environment
 process.env.NODE_ENV = 'test';

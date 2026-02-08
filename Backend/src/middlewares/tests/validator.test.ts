@@ -1,6 +1,8 @@
 // Backend/src/middleware/validator.test.ts - Validator Tests
 
 import { Request, Response, NextFunction } from 'express';
+import { describe, it, beforeEach, mock } from 'node:test';
+import assert from 'node:assert/strict';
 import { z } from 'zod';
 import {
     validate,
@@ -26,11 +28,12 @@ describe('validate middleware', () => {
             params: {},
         };
         mockResponse = {};
-        mockNext = jest.fn();
+        mockNext = mock.fn() as unknown as NextFunction;
     });
 
     describe('Body Validation', () => {
         it('should validate valid body data', () => {
+
             const schema = z.object({
                 name: z.string(),
                 age: z.number(),
@@ -41,8 +44,9 @@ describe('validate middleware', () => {
             const middleware = validate(schema, 'body');
             middleware(mockRequest as Request, mockResponse as Response, mockNext);
 
-            expect(mockNext).toHaveBeenCalledWith();
-            expect(mockRequest.body).toEqual({ name: 'John', age: 30 });
+            assert.equal((mockNext as any).mock.callCount(), 1);
+            assert.equal((mockNext as any).mock.calls[0].arguments.length, 0);
+            assert.deepEqual(mockRequest.body, { name: 'John', age: 30 });
         });
 
         it('should reject invalid body data', () => {
@@ -56,10 +60,11 @@ describe('validate middleware', () => {
             const middleware = validate(schema, 'body');
             middleware(mockRequest as Request, mockResponse as Response, mockNext);
 
-            expect(mockNext).toHaveBeenCalledWith(expect.any(ValidationError));
-            const error = (mockNext as jest.Mock).mock.calls[0][0];
-            expect(error.message).toBe('Request validation failed');
-            expect(error.details).toHaveProperty('target', 'body');
+            assert.equal((mockNext as any).mock.callCount(), 1);
+            const error = (mockNext as any).mock.calls[0].arguments[0];
+            assert.ok(error instanceof ValidationError);
+            assert.equal(error.message, 'Request validation failed');
+            assert.equal((error as any).details.target, 'body');
         });
 
         it('should provide detailed error information', () => {
@@ -73,14 +78,13 @@ describe('validate middleware', () => {
             const middleware = validate(schema, 'body');
             middleware(mockRequest as Request, mockResponse as Response, mockNext);
 
-            const error = (mockNext as jest.Mock).mock.calls[0][0];
-            expect(error.details.errors).toHaveLength(2);
-            expect(error.details.errors).toEqual(
-                expect.arrayContaining([
-                    expect.objectContaining({ path: 'email' }),
-                    expect.objectContaining({ path: 'age' }),
-                ])
-            );
+            const error = (mockNext as any).mock.calls[0].arguments[0];
+            assert.ok(error instanceof ValidationError);
+            assert.equal(Array.isArray((error as any).details.errors), true);
+            assert.equal((error as any).details.errors.length, 2);
+            const paths = (error as any).details.errors.map((e: any) => e.path);
+            assert.ok(paths.includes('email'));
+            assert.ok(paths.includes('age'));
         });
     });
 
@@ -95,7 +99,8 @@ describe('validate middleware', () => {
             const middleware = validate(schema, 'query');
             middleware(mockRequest as Request, mockResponse as Response, mockNext);
 
-            expect(mockNext).toHaveBeenCalledWith();
+            assert.equal((mockNext as any).mock.callCount(), 1);
+            assert.equal((mockNext as any).mock.calls[0].arguments.length, 0);
         });
     });
 
@@ -110,13 +115,15 @@ describe('validate middleware', () => {
             const middleware = validate(schema, 'params');
             middleware(mockRequest as Request, mockResponse as Response, mockNext);
 
-            expect(mockNext).toHaveBeenCalledWith();
+            assert.equal((mockNext as any).mock.callCount(), 1);
+            assert.equal((mockNext as any).mock.calls[0].arguments.length, 0);
         });
     });
 });
 
 describe('RoomConfigSchema', () => {
     it('should validate valid room configuration', () => {
+
         const validConfig = {
             maxPlayers: 4,
             targetScore: 41,
@@ -124,7 +131,7 @@ describe('RoomConfigSchema', () => {
         };
 
         const result = RoomConfigSchema.safeParse(validConfig);
-        expect(result.success).toBe(true);
+        assert.equal(result.success, true);
     });
 
     it('should apply default values', () => {
@@ -133,10 +140,10 @@ describe('RoomConfigSchema', () => {
         };
 
         const result = RoomConfigSchema.safeParse(minimalConfig);
-        expect(result.success).toBe(true);
+        assert.equal(result.success, true);
         if (result.success) {
-            expect(result.data.targetScore).toBe(41);
-            expect(result.data.allowBots).toBe(false);
+            assert.equal(result.data.targetScore, 41);
+            assert.equal(result.data.allowBots, false);
         }
     });
 
@@ -146,7 +153,7 @@ describe('RoomConfigSchema', () => {
         };
 
         const result = RoomConfigSchema.safeParse(invalidConfig);
-        expect(result.success).toBe(false);
+        assert.equal(result.success, false);
     });
 
     it('should reject negative targetScore', () => {
@@ -156,7 +163,7 @@ describe('RoomConfigSchema', () => {
         };
 
         const result = RoomConfigSchema.safeParse(invalidConfig);
-        expect(result.success).toBe(false);
+        assert.equal(result.success, false);
     });
 
     it('should reject targetScore above max', () => {
@@ -166,12 +173,13 @@ describe('RoomConfigSchema', () => {
         };
 
         const result = RoomConfigSchema.safeParse(invalidConfig);
-        expect(result.success).toBe(false);
+        assert.equal(result.success, false);
     });
 });
 
 describe('GameActionSchema', () => {
     it('should validate BID action', () => {
+
         const bidAction = {
             type: 'BID',
             playerId: 'player1',
@@ -179,7 +187,7 @@ describe('GameActionSchema', () => {
         };
 
         const result = GameActionSchema.safeParse(bidAction);
-        expect(result.success).toBe(true);
+        assert.equal(result.success, true);
     });
 
     it('should reject invalid BID value', () => {
@@ -190,7 +198,7 @@ describe('GameActionSchema', () => {
         };
 
         const result = GameActionSchema.safeParse(invalidBid);
-        expect(result.success).toBe(false);
+        assert.equal(result.success, false);
     });
 
     it('should validate PLAY_CARD action', () => {
@@ -204,7 +212,7 @@ describe('GameActionSchema', () => {
         };
 
         const result = GameActionSchema.safeParse(playAction);
-        expect(result.success).toBe(true);
+        assert.equal(result.success, true);
     });
 
     it('should reject invalid card suit', () => {
@@ -218,7 +226,7 @@ describe('GameActionSchema', () => {
         };
 
         const result = GameActionSchema.safeParse(invalidAction);
-        expect(result.success).toBe(false);
+        assert.equal(result.success, false);
     });
 
     it('should validate SET_TRUMP action', () => {
@@ -228,7 +236,7 @@ describe('GameActionSchema', () => {
         };
 
         const result = GameActionSchema.safeParse(trumpAction);
-        expect(result.success).toBe(true);
+        assert.equal(result.success, true);
     });
 
     it('should validate PASS action', () => {
@@ -238,7 +246,7 @@ describe('GameActionSchema', () => {
         };
 
         const result = GameActionSchema.safeParse(passAction);
-        expect(result.success).toBe(true);
+        assert.equal(result.success, true);
     });
 });
 
@@ -248,14 +256,14 @@ describe('validateSocketPayload', () => {
         const data = { value: 10 };
 
         const result = validateSocketPayload(schema, data);
-        expect(result).toEqual({ value: 10 });
+        assert.deepEqual(result, { value: 10 });
     });
 
     it('should throw ValidationError on failure', () => {
         const schema = z.object({ value: z.number() });
         const data = { value: 'invalid' };
 
-        expect(() => validateSocketPayload(schema, data)).toThrow(ValidationError);
+        assert.throws(() => validateSocketPayload(schema, data), ValidationError);
     });
 
     it('should include error details', () => {
@@ -264,12 +272,11 @@ describe('validateSocketPayload', () => {
 
         try {
             validateSocketPayload(schema, data);
-            fail('Should have thrown');
+            assert.fail('Should have thrown');
         } catch (error) {
-            expect(error).toBeInstanceOf(ValidationError);
-            if (error instanceof ValidationError) {
-                expect(error.details).toHaveProperty('errors');
-            }
+            assert.ok(error instanceof ValidationError);
+            assert.ok((error as any).details);
+            assert.ok('errors' in (error as any).details);
         }
     });
 });
@@ -278,31 +285,31 @@ describe('sanitizeString', () => {
     it('should remove HTML tags', () => {
         const input = '<script>alert("xss")</script>Hello';
         const result = sanitizeString(input);
-        expect(result).toBe('Hello');
+        assert.equal(result, 'Hello');
     });
 
     it('should remove javascript: protocol', () => {
         const input = 'javascript:alert(1)';
         const result = sanitizeString(input);
-        expect(result).toBe('alert(1)');
+        assert.equal(result, 'alert(1)');
     });
 
     it('should remove event handlers', () => {
         const input = 'onclick=alert(1)';
         const result = sanitizeString(input);
-        expect(result).toBe('');
+        assert.equal(result, '');
     });
 
     it('should trim whitespace', () => {
         const input = '  hello  ';
         const result = sanitizeString(input);
-        expect(result).toBe('hello');
+        assert.equal(result, 'hello');
     });
 
     it('should preserve safe text', () => {
         const input = 'Hello World 123';
         const result = sanitizeString(input);
-        expect(result).toBe('Hello World 123');
+        assert.equal(result, 'Hello World 123');
     });
 });
 
@@ -314,8 +321,8 @@ describe('sanitizeObject', () => {
         };
 
         const result = sanitizeObject(input);
-        expect(result.name).toBe('John');
-        expect(result.age).toBe(30);
+        assert.equal((result as any).name, 'John');
+        assert.equal((result as any).age, 30);
     });
 
     it('should sanitize nested objects', () => {
@@ -329,8 +336,8 @@ describe('sanitizeObject', () => {
         };
 
         const result = sanitizeObject(input);
-        expect(result.user.name).toBe('John');
-        expect(result.user.profile.bio).toBe('alert(1)Hello');
+        assert.equal((result as any).user.name, 'John');
+        assert.equal((result as any).user.profile.bio, 'alert(1)Hello');
     });
 
     it('should preserve non-string values', () => {
@@ -341,6 +348,6 @@ describe('sanitizeObject', () => {
         };
 
         const result = sanitizeObject(input);
-        expect(result).toEqual(input);
+        assert.deepEqual(result, input);
     });
 });

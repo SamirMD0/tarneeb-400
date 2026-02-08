@@ -1,0 +1,50 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mD:/User/Documents/PorfolioProjects/400/Backend[39m
+
+ [31m❯[39m src/__tests__/integration/socketFailure.test.ts [2m([22m[2m2 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 5051[2mms[22m[39m
+[31m     [31m×[31m should reject malformed game actions with VALIDATION_ERROR[39m[33m 5013[2mms[22m[39m
+[31m     [31m×[31m should reject actions when not in a room[39m[32m 32[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/integration/socketFailure.test.ts[2m > [22mSocket Integration Failure Modes[2m > [22mshould reject malformed game actions with VALIDATION_ERROR
+[31m[1mError[22m: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+[36m [2m❯[22m src/__tests__/integration/socketFailure.test.ts:[2m75:5[22m[39m
+    [90m 73| [39m    })[33m;[39m
+    [90m 74| [39m
+    [90m 75| [39m    it('should reject malformed game actions with VALIDATION_ERROR', a…
+    [90m   | [39m    [31m^[39m
+    [90m 76| [39m        clientSocket [33m=[39m [33mClient[39m([32m`http://localhost:[39m[36m${[39mport[36m}[39m[32m`[39m)[33m;[39m
+    [90m 77| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/integration/socketFailure.test.ts[2m > [22mSocket Integration Failure Modes[2m > [22mshould reject actions when not in a room
+[31m[1mAssertionError[22m: expected 'VALIDATION_ERROR' to be 'NOT_IN_ROOM' // Object.is equality[39m
+
+Expected: [32m"NOT_IN_ROOM"[39m
+Received: [31m"VALIDATION_ERROR"[39m
+
+[36m [2m❯[22m Socket.<anonymous> src/__tests__/integration/socketFailure.test.ts:[2m110:38[22m[39m
+    [90m108| [39m            socket2[33m.[39m[34mon[39m([32m'error'[39m[33m,[39m (err[33m:[39m any) [33m=>[39m {
+    [90m109| [39m                [35mtry[39m {
+    [90m110| [39m                    [34mexpect[39m(err[33m.[39mcode)[33m.[39m[34mtoBe[39m([32m'NOT_IN_ROOM'[39m)[33m;[39m
+    [90m   | [39m                                     [31m^[39m
+    [90m111| [39m                    socket2[33m.[39m[34mclose[39m()[33m;[39m
+    [90m112| [39m                    [34mresolve[39m()[33m;[39m
+[90m [2m❯[22m Socket.Emitter.emit node_modules/@socket.io/component-emitter/lib/cjs/index.js:[2m143:20[22m[39m
+[90m [2m❯[22m Socket.emitEvent node_modules/socket.io-client/build/esm-debug/socket.js:[2m552:20[22m[39m
+[90m [2m❯[22m Socket.onevent node_modules/socket.io-client/build/esm-debug/socket.js:[2m539:18[22m[39m
+[90m [2m❯[22m Socket.onpacket node_modules/socket.io-client/build/esm-debug/socket.js:[2m507:22[22m[39m
+[90m [2m❯[22m Manager.Emitter.emit node_modules/@socket.io/component-emitter/lib/cjs/index.js:[2m143:20[22m[39m
+[90m [2m❯[22m node_modules/socket.io-client/build/esm-debug/manager.js:[2m217:18[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[90m (2)[39m
+[2m   Start at [22m 14:44:22
+[2m   Duration [22m 6.59s[2m (transform 345ms, setup 0ms, import 1.35s, tests 5.05s, environment 0ms)[22m
+

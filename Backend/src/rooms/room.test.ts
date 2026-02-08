@@ -6,16 +6,6 @@ import { Room } from './room.js';
 import type { RoomConfig } from '../types/room.types.js';
 import { roomCache } from '../cache/roomCache.js';
 
-// Mock RoomCache to prevent Redis calls
-mock.module('../cache/roomCache.js', {
-  namedExports: {
-    RoomCache: {
-      cacheRoom: mock.fn(),
-      getRoom: mock.fn(),
-    },
-  },
-});
-
 describe('Room - Phase 16 Async', () => {
   const defaultConfig: RoomConfig = {
     maxPlayers: 4,
@@ -27,7 +17,8 @@ describe('Room - Phase 16 Async', () => {
   }
 
   beforeEach(() => {
-    (roomCache.cacheRoom as any).mockImplementation(() => Promise.resolve());
+    mock.method(roomCache, 'cacheRoom', async () => {});
+    mock.method(roomCache, 'getRoom', async () => undefined);
   });
 
   afterEach(() => {

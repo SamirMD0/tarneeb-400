@@ -1,17 +1,10 @@
 // Backend/src/cache/roomCache.test.ts - Phase 16: Redis Caching Tests
 
 import { describe, it, mock, beforeEach, afterEach } from 'node:test';
-import assert from 'node:assert';
+import assert from 'node:assert/strict';
 import { roomCache } from './roomCache.js';
 import { Room } from '../rooms/room.js';
 import { redis } from '../lib/redis.js';
-
-// Mock redis.getClient to return a mock client
-mock.module('../lib/redis.js', {
-    namedExports: {
-        redis: { getClient: mock.fn() },
-    },
-});
 
 describe('RoomCache', () => {
     let mockClient: any;
@@ -28,7 +21,7 @@ describe('RoomCache', () => {
             mGet: mock.fn(),
         };
 
-        (redis.getClient as any).mockImplementation(() => mockClient);
+        mock.method(redis, 'getClient', () => mockClient);
     });
 
     afterEach(() => {

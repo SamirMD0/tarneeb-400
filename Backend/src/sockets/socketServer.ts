@@ -2,11 +2,12 @@
 
 import { Server as HTTPServer } from 'http';
 import { Server, Socket } from 'socket.io';
-import type { 
-    ClientToServerEvents, 
-    ServerToClientEvents, 
-    SocketData 
+import type {
+    ClientToServerEvents,
+    ServerToClientEvents,
+    SocketData
 } from '../types/socket.types.js';
+import { socketConnectionLimiter } from '../middlewares/rateLimiter.js';
 
 export function initializeSocketServer(httpServer: HTTPServer): Server<
     ClientToServerEvents,
@@ -31,6 +32,16 @@ export function initializeSocketServer(httpServer: HTTPServer): Server<
         connectTimeout: 45000,
     });
 
+    // Phase 19: Socket Connection Rate Limiting
+    io.use(async (socket, next) => {
+        try {
+            await socketConnectionLimiter.consume(socket.handshake.address);
+            next();
+        } catch (e) {
+            next(new Error('Too many connection attempts, please try again later'));
+        }
+    });
+
     // Connection event
     io.on('connection', (socket: Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>) => {
         console.log(`[Socket] Client connected: ${socket.id}`);
@@ -41,7 +52,7 @@ export function initializeSocketServer(httpServer: HTTPServer): Server<
         // Disconnection event
         socket.on('disconnect', (reason) => {
             console.log(`[Socket] Client disconnected: ${socket.id}, reason: ${reason}`);
-            
+
             // Cleanup: Leave all rooms
             const rooms = Array.from(socket.rooms);
             rooms.forEach(room => {
@@ -75,14 +86,14 @@ export function getConnectionCount(io: Server): number {
 export function getRoomCount(io: Server): number {
     const rooms = io.sockets.adapter.rooms;
     let count = 0;
-    
+
     rooms.forEach((_, roomId) => {
         // Exclude private socket rooms (named by socket ID)
         if (!io.sockets.sockets.has(roomId)) {
             count++;
         }
     });
-    
+
     return count;
 }
 

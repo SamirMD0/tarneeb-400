@@ -1,72 +1,35 @@
-// Backend/src/middleware/rateLimiter.ts - Phase 19: Rate Limiting
+import { rateLimit } from 'express-rate-limit';
+import { RateLimiterMemory } from 'rate-limiter-flexible';
 
-import rateLimit from 'express-rate-limit';
-import { RateLimitError } from '../utils/errors.js';
-import { getEnv } from '../lib/env.js';
-
-/**
- * Custom error handler for rate limit middleware
- */
-function rateLimitHandler(): void {
-    throw new RateLimitError();
-}
-
-/**
- * Global rate limiter for all API routes
- * Default: 100 requests per 15 minutes per IP
- */
+// Global Rate Limiter (restored)
 export const globalLimiter = rateLimit({
-    windowMs: getEnv().RATE_LIMIT_WINDOW_MS,
-    max: getEnv().RATE_LIMIT_MAX_REQUESTS,
-    standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
-    legacyHeaders: false, // Disable `X-RateLimit-*` headers
-    handler: rateLimitHandler,
-    skip: (req) => {
-        // Skip rate limiting in test environment
-        return getEnv().NODE_ENV === 'test';
-    },
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
 });
 
-/**
- * Strict rate limiter for room creation
- * Default: 3 rooms per hour per IP
- */
+// 1. Room Creation Limiter (HTTP/Socket shared concept, mostly for HTTP currently)
 export const roomCreationLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: () => getEnv().ROOM_CREATION_LIMIT,
-    standardHeaders: true,
-    legacyHeaders: false,
-    handler: rateLimitHandler,
-    skip: (req) => getEnv().NODE_ENV === 'test',
-    keyGenerator: (req) => {
-        // Use IP address as key
-        return req.ip || 'unknown';
-    },
+    max: 10, // Limit each IP to 10 room creations per hour
+    message: 'Too many rooms created from this IP, please try again after an hour',
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
-/**
- * Moderate rate limiter for authenticated operations
- * 200 requests per 15 minutes
- */
+// 2. Authenticated Actions Limiter (General API protection)
 export const authenticatedLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 200,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000, // Limit each IP to 1000 requests per windowMs
+    message: 'Too many requests from this IP, please try again later',
     standardHeaders: true,
     legacyHeaders: false,
-    handler: rateLimitHandler,
-    skip: (req) => getEnv().NODE_ENV === 'test',
 });
 
-/**
- * Socket connection rate limiter
- * Applied per IP address
- * 10 connections per minute
- */
-export const socketConnectionLimiter = rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    max: 10,
-    standardHeaders: true,
-    legacyHeaders: false,
-    handler: rateLimitHandler,
-    skip: (req) => getEnv().NODE_ENV === 'test',
+// 3. Socket Connection Limiter
+// Uses rate-limiter-flexible for high performance
+export const socketConnectionLimiter = new RateLimiterMemory({
+    points: 10, // 10 connections
+    duration: 60, // per 60 seconds
 });

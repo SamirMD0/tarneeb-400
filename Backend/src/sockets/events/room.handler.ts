@@ -1,12 +1,11 @@
-// Backend/src/sockets/events/room.handler.ts - Phase 18: Room Event Handlers
+// Backend/src/sockets/events/room.handler.ts - Phase 20: Performance Monitoring
 
 import { Server, Socket } from 'socket.io';
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from '../../types/socket.types.js';
 import type { RoomManager } from '../../rooms/roomManager.js';
 import { applyMiddleware } from '../socketMiddleware.js';
+import { metrics } from '../../lib/metrics.js';
 
-// Handler for room management events
-// (create_room, join_room, start_game, leave_room)
 type SocketType = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
 
 export function registerRoomHandlers(
@@ -14,15 +13,39 @@ export function registerRoomHandlers(
     io: Server<ClientToServerEvents, ServerToClientEvents, {}, SocketData>,
     roomManager: RoomManager
 ) {
-    const createRoom = applyMiddleware(socket, (socket, data) => handleCreateRoom(socket, data, roomManager));
-    const joinRoom = applyMiddleware(socket, (socket, data) => handleJoinRoom(socket, data, roomManager));
-    const startGame = applyMiddleware(socket, (socket, data) => handleStartGame(socket, data, io, roomManager));
-    const leaveRoom = applyMiddleware(socket, (socket, data) => handleLeaveRoom(socket, data, roomManager));
+    // ✅ Phase 20: Wrap handlers with performance timing
+    const createRoom = wrapWithTiming('create_room', 
+        applyMiddleware(socket, (socket, data) => handleCreateRoom(socket, data, roomManager))
+    );
+    const joinRoom = wrapWithTiming('join_room',
+        applyMiddleware(socket, (socket, data) => handleJoinRoom(socket, data, roomManager))
+    );
+    const startGame = wrapWithTiming('start_game',
+        applyMiddleware(socket, (socket, data) => handleStartGame(socket, data, io, roomManager))
+    );
+    const leaveRoom = wrapWithTiming('leave_room',
+        applyMiddleware(socket, (socket, data) => handleLeaveRoom(socket, data, roomManager))
+    );
 
     socket.on('create_room', (data: any) => createRoom(socket, data));
     socket.on('join_room', (data: any) => joinRoom(socket, data));
     socket.on('start_game', (data: any) => startGame(socket, data));
     socket.on('leave_room', (data: any) => leaveRoom(socket, data));
+}
+
+/**
+ * Phase 20: Performance timing wrapper for socket events
+ * Measures actual handler execution time
+ */
+function wrapWithTiming(eventName: string, handler: any): any {
+    return async (...args: any[]) => {
+        const end = metrics.timeSocketEvent(eventName);
+        try {
+            await handler(...args);
+        } finally {
+            end();
+        }
+    };
 }
 
 async function handleCreateRoom(socket: SocketType, data: any, roomManager: RoomManager): Promise<void> {

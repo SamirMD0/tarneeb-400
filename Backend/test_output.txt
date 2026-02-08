@@ -1,0 +1,13 @@
+file:///D:/User/Documents/PorfolioProjects/400/Backend/node_modules/vitest/dist/chunks/vi.2VT5v0um.js:3909
+		throw new Error(`Vitest mocker was not initialized in this environment. vi.${String(name)}() is forbidden.`);
+		      ^
+
+Error: Vitest mocker was not initialized in this environment. vi.queueMock() is forbidden.
+    at Object.get (file:///D:/User/Documents/PorfolioProjects/400/Backend/node_modules/vitest/dist/chunks/vi.2VT5v0um.js:3909:9)
+    at Object.mock (file:///D:/User/Documents/PorfolioProjects/400/Backend/node_modules/vitest/dist/chunks/vi.2VT5v0um.js:3807:13)
+    at <anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\socketFailure.test.ts:12:4)
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:547:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)
+
+Node.js v22.13.1

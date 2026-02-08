@@ -29,7 +29,13 @@ export function sanitizeXSS(req: Request, res: Response, next: NextFunction): vo
 
     // Sanitize query
     if (req.query) {
-        req.query = sanitizeValue(req.query) as Record<string, any>;
+        const sanitizedQuery = sanitizeValue(req.query) as Record<string, any>;
+        const queryObj = req.query as unknown as Record<string, any>;
+
+        for (const key of Object.keys(queryObj)) {
+            delete queryObj[key];
+        }
+        Object.assign(queryObj, sanitizedQuery);
     }
 
     // Sanitize params

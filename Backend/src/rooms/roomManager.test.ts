@@ -6,29 +6,16 @@ import { RoomManager } from "./roomManager.js";
 import { RoomConfig } from "../types/room.types.js";
 import { roomCache } from "../cache/roomCache.js";
 
-// Mock RoomCache
-mock.module("../cache/roomCache.js", {
-    namedExports: {
-        RoomCache: {
-            cacheRoom: mock.fn(),
-            getRoom: mock.fn(),
-            deleteRoom: mock.fn(),
-            getAllActiveRooms: mock.fn(),
-        },
-    },
-});
-
 describe("RoomManager", () => {
     let manager: RoomManager;
     const defaultConfig: RoomConfig = { maxPlayers: 4 };
 
     beforeEach(() => {
         manager = new RoomManager();
-        // Reset mocks
-        (roomCache.cacheRoom as any).mockImplementation(() => Promise.resolve());
-        (roomCache.getRoom as any).mockImplementation(() => Promise.resolve(undefined));
-        (roomCache.deleteRoom as any).mockImplementation(() => Promise.resolve());
-        (roomCache.getAllActiveRooms as any).mockImplementation(() => Promise.resolve([]));
+        mock.method(roomCache, 'cacheRoom', async () => {});
+        mock.method(roomCache, 'getRoom', async () => undefined);
+        mock.method(roomCache, 'deleteRoom', async () => {});
+        mock.method(roomCache, 'getAllActiveRooms', async () => []);
     });
 
     afterEach(() => {

@@ -1,7 +1,8 @@
 // Backend/src/middleware/errorHandler.ts - Phase 19: Global Error Handler
 
+import { v4 as uuidv4 } from 'uuid';
 import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
-import { BaseError, isOperationalError, normalizeError } from '../utils/errors.js';
+import { GameError, isOperationalError, normalizeError } from '../utils/errors.js';
 import { ZodError } from 'zod';
 import { getEnv } from '../lib/env.js';
 import { logger, logError } from '../lib/logger.js';
@@ -63,7 +64,7 @@ export const errorHandler: ErrorRequestHandler = (
 /**
  * Log error to console with context
  */
-function logErrorInternal(error: BaseError, req: Request): void {
+function logErrorInternal(error: GameError, req: Request): void {
     if (!getEnv().LOG_ERRORS) {
         return;
     }
