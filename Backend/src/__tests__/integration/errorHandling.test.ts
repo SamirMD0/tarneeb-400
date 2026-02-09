@@ -73,9 +73,7 @@ describe('Error Handling Integration Tests', () => {
     });
 
     afterEach(() => {
-        redisGetClientMock?.restore();
-        redisGetStatsMock?.restore();
-        redisPingMock?.restore();
+        mock.restoreAll();
 
         redisPingMock = undefined;
         redisGetStatsMock = undefined;

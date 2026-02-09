@@ -100,8 +100,8 @@ function sanitizeMongoKeys(value: unknown): any {
 
     const out: Record<string, any> = {};
     for (const [rawKey, rawVal] of Object.entries(value as Record<string, any>)) {
-        const key = rawKey.startsWith('$') || rawKey.includes('.')
-            ? rawKey.replace(/^\$/g, '_').replace(/\./g, '_')
+        const key = rawKey.startsWith('$') || rawKey.includes('.') || rawKey.includes('[') || rawKey.includes(']')
+            ? rawKey.replace(/\$/g, '_').replace(/\./g, '_').replace(/\[|\]/g, '_')
             : rawKey;
 
         if (key !== rawKey && getEnv().LOG_ERRORS) {
@@ -145,9 +145,15 @@ export function preventHPP(req: Request, res: Response, next: NextFunction): voi
     const seen = new Set<string>();
 
     for (const key of Object.keys(req.query)) {
+        const value = req.query[key];
+
+        if (!ALLOWED_DUPLICATES.includes(key) && Array.isArray(value)) {
+            (req.query as any)[key] = value[0];
+            continue;
+        }
+
         if (seen.has(key) && !ALLOWED_DUPLICATES.includes(key)) {
             // Take only the first occurrence
-            const value = req.query[key];
             (req.query as any)[key] = Array.isArray(value) ? value[0] : value;
         }
         seen.add(key);
