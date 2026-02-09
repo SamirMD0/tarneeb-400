@@ -1,371 +1,145 @@
-PS D:\User\Documents\PorfolioProjects\400\Backend> npm run test
-
-> backend@1.0.0 test
-> tsx --test
-
+PS D:\User\Documents\PorfolioProjects\400\Backend> npx tsx --test --experimental-test-module-mocks src/__tests__/integration/errorHandling.test.ts
 ✅ Environment variables validated
 ▶ Error Handling Integration Tests
   ▶ Validation Errors
-    ✖ should return 400 for invalid room configuration (105.5273ms)
-      Error: expected 400 "Bad Request", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:72:18)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
+    ✖ should return 400 for invalid room configuration (59.4115ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
+          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
           at async Promise.all (index 0)
-          at async Suite.run (node:internal/test_runner/test:1310:7)
-          at async Promise.all (index 0)
-          at async Suite.run (node:internal/test_runner/test:1310:7)
-          at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
 
-    ✖ should accept valid room configuration (17.8855ms)
-      Error: expected 201 "Created", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:89:18)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
+    ✖ should accept valid room configuration (14.0428ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
           at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
           at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
 
-    ✖ should provide detailed validation errors (15.5063ms)
-      Error: expected 400 "Bad Request", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:103:18)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
+    ✖ should provide detailed validation errors (11.5628ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
           at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
           at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
 
-  ✖ Validation Errors (141.2757ms)
+  ✖ Validation Errors (86.2832ms)
   ▶ Not Found Errors
-    ✖ should return 404 for non-existent room (25.701ms)
-      Error: expected 404 "Not Found", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:126:18)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
+    ✖ should return 404 for non-existent room (13.1491ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
           at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
           at async Promise.all (index 0)
-          at async Suite.run (node:internal/test_runner/test:1310:7)
-          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
 
-  ✖ Not Found Errors (26.6782ms)
+  ✖ Not Found Errors (13.8501ms)
   ▶ XSS Protection
-    ✖ should sanitize script tags from request body (15.0551ms)
-      Error: expected 200 "OK", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:153:18)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
+    ✖ should sanitize script tags from request body (12.7383ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
           at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
           at async Promise.all (index 0)
-          at async Suite.run (node:internal/test_runner/test:1310:7)
-          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
 
-    ✖ should remove javascript: protocol (10.997ms)
-      Error: expected 200 "OK", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:165:18)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
+    ✖ should remove javascript: protocol (9.4391ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
           at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
           at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
 
-    ✖ should sanitize nested objects (20.1203ms)
-      Error: expected 200 "OK", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:179:18)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
+    ✖ should sanitize nested objects (11.0453ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
           at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
           at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
 
-  ✖ XSS Protection (47.6901ms)
+  ✖ XSS Protection (34.0387ms)
   ▶ MongoDB Injection Protection
-    ✖ should sanitize MongoDB operators in query (14.6133ms)
-      Error: expected 200 "OK", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:199:18)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
+    ✖ should sanitize MongoDB operators in query (14.6805ms)
+      AssertionError [ERR_ASSERTION]: Should sanitize $ne operator
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:237:20)
           at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at async Test.run (node:internal/test_runner/test:932:9)
           at async Promise.all (index 0)
           at async Suite.run (node:internal/test_runner/test:1310:7)
-          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7) {
+        generatedMessage: false,
+        code: 'ERR_ASSERTION',
+        actual: false,
+        expected: true,
+        operator: '=='
+      }
 
-    ✖ should sanitize dot notation attacks (15.7468ms)
-      Error: expected 200 "OK", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:210:18)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
+    ✖ should sanitize dot notation attacks (14.0404ms)
+      AssertionError [ERR_ASSERTION]: Should sanitize dot notation
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:248:20)
           at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+          at async Test.run (node:internal/test_runner/test:932:9)
+          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7) {
+        generatedMessage: false,
+        code: 'ERR_ASSERTION',
+        actual: false,
+        expected: true,
+        operator: '=='
+      }
 
-  ✖ MongoDB Injection Protection (31.2573ms)
+  ✖ MongoDB Injection Protection (29.1607ms)
   ▶ HTTP Parameter Pollution
-    ✖ should prevent duplicate parameters (15.57ms)
-      Error: expected 200 "OK", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:230:18)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
-          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-          at async Promise.all (index 0)
-          at async Suite.run (node:internal/test_runner/test:1310:7)
-          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
-
-    ✖ should allow whitelisted duplicate parameters (14.5811ms)
-      Error: expected 200 "OK", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:239:18)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
-          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
-
-  ✖ HTTP Parameter Pollution (30.8451ms)
-  ▶ 404 Handler
-    ✖ should return 404 for unknown routes (13.4524ms)
-      Error: expected 404 "Not Found", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:258:18)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
-          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-          at async Promise.all (index 0)
-          at async Suite.run (node:internal/test_runner/test:1310:7)
-          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
-
-    ✖ should not affect existing routes (10.7769ms)
-      Error: expected 200 "OK", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:269:49)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
-          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
-
-  ✖ 404 Handler (24.9029ms)
-  ▶ Error Response Format
-    ✖ should include timestamp in ISO format (14.5498ms)
-      Error: expected 400 "Bad Request", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:283:63)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
-          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-          at async Promise.all (index 0)
-          at async Suite.run (node:internal/test_runner/test:1310:7)
-          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
-
-    ✖ should include request path (9.4106ms)
-      Error: expected 400 "Bad Request", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:293:63)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
-          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
-
-    ✖ should include error code (28.034ms)
-      Error: expected 400 "Bad Request", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:299:63)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
-          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
-
-    ✖ should include error message (10.0363ms)
-      Error: expected 400 "Bad Request", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:305:63)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
-          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
-
-  ✖ Error Response Format (62.9468ms)
-  ▶ Unhandled Errors
-    ✖ should return 500 for unknown errors (11.8097ms)
+    ✖ should prevent duplicate parameters (13.4745ms)
       AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
       + actual - expected
 
-      + 'Cannot set property query of #<IncomingMessage> which has only a getter'
-      - 'Unexpected error'
+      + [
+      +   '1',
+      +   '2'
+      + ]
+      - '1'
 
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:325:20)
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:267:20)
           at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
           at async Test.run (node:internal/test_runner/test:932:9)
           at async Promise.all (index 0)
@@ -373,65 +147,424 @@ PS D:\User\Documents\PorfolioProjects\400\Backend> npm run test
           at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7) {
         generatedMessage: true,
         code: 'ERR_ASSERTION',
-        actual: 'Cannot set property query of #<IncomingMessage> which has only a getter',
-        expected: 'Unexpected error',
+        actual: [ '1', '2' ],
+        expected: '1',
         operator: 'strictEqual'
       }
 
-  ✖ Unhandled Errors (12.5164ms)
-  ▶ Multiple Middleware Integration
-    ✖ should apply all security layers (21.5632ms)
-      Error: expected 400 "Bad Request", got 500 "Internal Server Error"
-          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:351:18)
-          at Test.runInAsyncScope (node:async_hooks:211:14)
-          at Test.run (node:internal/test_runner/test:931:25)
+    ✖ should allow whitelisted duplicate parameters (7.9672ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
+          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
+
+  ✖ HTTP Parameter Pollution (21.957ms)
+  ▶ 404 Handler
+    ✖ should return 404 for unknown routes (11.9422ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
           at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
           at async Promise.all (index 0)
-          at async Suite.run (node:internal/test_runner/test:1310:7)
-          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
-      ----
-          at Test._assertStatus (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:309:14)
-          at D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:365:13
-          at Test._assertFunction (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:342:13)
-          at Test.assert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:195:23)
-          at localAssert (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:138:14)
-          at Server.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\node_modules\supertest\lib\test.js:152:11)
-          at Object.onceWrapper (node:events:638:28)
-          at Server.emit (node:events:524:28)
-          at emitCloseNT (node:net:2416:8)
-          at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
 
-  ✖ Multiple Middleware Integration (22.1402ms)
-✖ Error Handling Integration Tests (410.1355ms)
-✅ Environment variables validated
-▶ Error Tracking Integration Tests
-  ▶ Error Metrics Tracking
-    ✔ should track validation errors in metrics (89.1796ms)
-    ✔ should track not found errors in metrics (16.8675ms)
-    ✔ should track internal errors in metrics (15.5292ms)
-    ✔ should track rate limit errors in metrics (15.0741ms)
-    ✔ should distinguish between operational and internal errors (22.0282ms)
-  ✔ Error Metrics Tracking (161.112ms)
-  ▶ Error Counter Increment
-    ✔ should increment error counter for each error (44.5734ms)
-    ✔ should track different error types separately (45.4552ms)
-  ✔ Error Counter Increment (91.1152ms)
+    ✖ should not affect existing routes (9.5931ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
+          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
+
+  ✖ 404 Handler (22.4458ms)
   ▶ Error Response Format
-    ✔ should include error code in metrics (15.6061ms)
-    ✔ should include severity in metrics (11.4307ms)
-  ✔ Error Response Format (27.6092ms)
-  ▶ Metrics Reset
-    ✔ should reset error counters when metrics are reset (30.6466ms)
-  ✔ Metrics Reset (30.9698ms)
-  ▶ Edge Cases
-    ✔ should handle unknown error types (12.4607ms)
-  ✔ Edge Cases (12.7724ms)
-✔ Error Tracking Integration Tests (332.262ms)
-▶ Monitoring Integration
-  ✔ should expose /metrics endpoint (59.3244ms)
-2026-02-08 20:28:44.102 [warn]: Health check degraded {"service":"tarneeb-backend","mongodb":false,"redis":false}
-  ✔ should expose /api/health endpoint (26.7586ms)
-  ✔ should track errors in metrics (24.8258ms)
-✔ Monitoring Integration (118.4378ms)
-2026-02-08 20:28:45.201 [info]: [Socket] Event handlers registered {"service":"tarneeb-backend"}
-2026-02-08 20:28:45.289 [info]: Socket connected {"service":"tarneeb-backend","socketId":"nrzMutpnAW_UmW0eAAAB","ip":"::1"}
+    ✖ should include timestamp in ISO format (11.3361ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
+          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at async Promise.all (index 0)
+
+    ✖ should include request path (10.0243ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
+          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
+
+    ✖ should include error code (10.5818ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
+          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
+
+    ✖ should include error message (17.4197ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
+          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
+
+  ✖ Error Response Format (50.1631ms)
+  ▶ Unhandled Errors
+    ✖ should return 500 for unknown errors (12.9407ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
+          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at async Promise.all (index 0)
+
+  ✖ Unhandled Errors (13.9421ms)
+  ▶ Multiple Middleware Integration
+    ✖ should apply all security layers (9.9507ms)
+      TypeError [Error]: redisGetClientMock?.restore is not a function
+          at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+          at TestHook.runInAsyncScope (node:async_hooks:211:14)
+          at TestHook.run (node:internal/test_runner/test:931:25)
+          at TestHook.run (node:internal/test_runner/test:1222:18)
+          at Suite.runHook (node:internal/test_runner/test:850:20)
+          at node:internal/test_runner/test:895:27
+          at node:internal/util:544:20
+          at Test.run (node:internal/test_runner/test:938:13)
+          at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at async Promise.all (index 0)
+
+  ✖ Multiple Middleware Integration (10.4845ms)
+✖ Error Handling Integration Tests (293.1901ms)
+ℹ tests 19
+ℹ suites 10
+ℹ pass 0
+ℹ fail 19
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1703.6278
+
+✖ failing tests:
+
+test at src\__tests__\integration\errorHandling.test.ts:1:2097
+✖ should return 400 for invalid room configuration (59.4115ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Promise.all (index 0)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:2519
+✖ should accept valid room configuration (14.0428ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:2728
+✖ should provide detailed validation errors (11.5628ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:3316
+✖ should return 404 for non-existent room (13.1491ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Promise.all (index 0)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:3856
+✖ should sanitize script tags from request body (12.7383ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Promise.all (index 0)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:4202
+✖ should remove javascript: protocol (9.4391ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:4448
+✖ should sanitize nested objects (11.0453ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:4942
+✖ should sanitize MongoDB operators in query (14.6805ms)
+  AssertionError [ERR_ASSERTION]: Should sanitize $ne operator
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:237:20)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Test.run (node:internal/test_runner/test:932:9)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1310:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '=='
+  }
+
+test at src\__tests__\integration\errorHandling.test.ts:1:5206
+✖ should sanitize dot notation attacks (14.0404ms)
+  AssertionError [ERR_ASSERTION]: Should sanitize dot notation
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:248:20)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Test.run (node:internal/test_runner/test:932:9)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '=='
+  }
+
+test at src\__tests__\integration\errorHandling.test.ts:1:5624
+✖ should prevent duplicate parameters (13.4745ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + [
+  +   '1',
+  +   '2'
+  + ]
+  - '1'
+
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:267:20)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Test.run (node:internal/test_runner/test:932:9)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1310:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ '1', '2' ],
+    expected: '1',
+    operator: 'strictEqual'
+  }
+
+test at src\__tests__\integration\errorHandling.test.ts:1:5800
+✖ should allow whitelisted duplicate parameters (7.9672ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:6151
+✖ should return 404 for unknown routes (11.9422ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Promise.all (index 0)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:6485
+✖ should not affect existing routes (9.5931ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:6740
+✖ should include timestamp in ISO format (11.3361ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Promise.all (index 0)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:7031
+✖ should include request path (10.0243ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:7184
+✖ should include error code (10.5818ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:7351
+✖ should include error message (17.4197ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:629:7)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:7665
+✖ should return 500 for unknown errors (12.9407ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Promise.all (index 0)
+
+test at src\__tests__\integration\errorHandling.test.ts:1:8148
+✖ should apply all security layers (9.9507ms)
+  TypeError [Error]: redisGetClientMock?.restore is not a function
+      at TestContext.<anonymous> (D:\User\Documents\PorfolioProjects\400\Backend\src\__tests__\integration\errorHandling.test.ts:76:29)
+      at TestHook.runInAsyncScope (node:async_hooks:211:14)
+      at TestHook.run (node:internal/test_runner/test:931:25)
+      at TestHook.run (node:internal/test_runner/test:1222:18)
+      at Suite.runHook (node:internal/test_runner/test:850:20)
+      at node:internal/test_runner/test:895:27
+      at node:internal/util:544:20
+      at Test.run (node:internal/test_runner/test:938:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Promise.all (index 0)
+PS D:\User\Documents\PorfolioProjects\400\Backend>

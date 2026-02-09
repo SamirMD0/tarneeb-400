@@ -1,6 +1,6 @@
-// Backend/src/__tests__/integration/errorHandling.test.ts - Integration Tests
+// Backend/src/__tests__/integration/errorHandling.test.ts - Integration Tests (FIXED for tsx)
 
-import { describe, it, before, beforeEach } from 'node:test';
+import { describe, it, before, beforeEach, afterEach, mock } from 'node:test';
 import assert from 'node:assert';
 import express, { Express } from 'express';
 import request from 'supertest';
@@ -19,14 +19,22 @@ import {
     RateLimitError,
 } from '../../utils/errors.js';
 
+// Import redis to mock its methods
+import { redis } from '../../lib/redis.js';
+
 describe('Error Handling Integration Tests', () => {
     let app: Express;
+
+    let redisPingMock: any;
+    let redisGetStatsMock: any;
+    let redisGetClientMock: any;
 
     before(() => {
         // Initialize environment before running any tests
         process.env.NODE_ENV = 'test';
         process.env.MONGO_URI = 'mongodb://localhost:27017/test_db';
         process.env.REDIS_URL = 'redis://localhost:6379';
+
         process.env.PORT = '5001';
         process.env.CORS_ORIGIN = '*';
         process.env.LOG_ERRORS = 'false';
@@ -42,10 +50,36 @@ describe('Error Handling Integration Tests', () => {
         app = express();
         app.use(express.json());
 
-        // Apply security middleware
+        redisPingMock = mock.method(redis, 'ping', async () => true);
+        redisGetStatsMock = mock.method(redis, 'getStats', async () => ({
+            isConnected: true,
+            circuitOpen: false,
+            memory: '1.5M',
+            keys: 100,
+            evicted: 0,
+        }));
+        redisGetClientMock = mock.method(redis, 'getClient', () => ({
+            isOpen: true,
+            set: async () => {},
+            get: async () => null,
+            del: async () => 1,
+            scan: async () => ({ cursor: 0, keys: [] }),
+            mGet: async () => [],
+        }));
+
         app.use(sanitizeMongoQueries);
         app.use(sanitizeXSS);
         app.use(preventHPP);
+    });
+
+    afterEach(() => {
+        redisGetClientMock?.restore();
+        redisGetStatsMock?.restore();
+        redisPingMock?.restore();
+
+        redisPingMock = undefined;
+        redisGetStatsMock = undefined;
+        redisGetClientMock = undefined;
     });
 
     describe('Validation Errors', () => {
