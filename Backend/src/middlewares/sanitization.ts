@@ -14,13 +14,11 @@ export function sanitizeMongoQueries(req: Request, res: Response, next: NextFunc
 
     if (req.query && typeof req.query === 'object') {
         const sanitized = sanitizeMongoKeys(req.query as any) as Record<string, any>;
-        const existingKeys = Object.keys(req.query);
-        for (const key of existingKeys) {
-            delete (req.query as any)[key];
-        }
-        for (const [key, value] of Object.entries(sanitized)) {
-            (req.query as any)[key] = value;
-        }
+        Object.defineProperty(req, 'query', {
+            value: sanitized,
+            writable: true,
+            configurable: true,
+        });
     }
 
     if (req.params && typeof req.params === 'object') {
@@ -141,23 +139,31 @@ export function preventHPP(req: Request, res: Response, next: NextFunction): voi
     if (!req.query || typeof req.query !== 'object') {
         return next();
     }
-
+     const sanitizedQuery: Record<string, unknown> = {};
     const seen = new Set<string>();
 
     for (const key of Object.keys(req.query)) {
-        const value = req.query[key];
+         const value = req.query[key];
 
         if (!ALLOWED_DUPLICATES.includes(key) && Array.isArray(value)) {
-            (req.query as any)[key] = value[0];
+            sanitizedQuery[key] = value[0];
             continue;
         }
 
         if (seen.has(key) && !ALLOWED_DUPLICATES.includes(key)) {
-            // Take only the first occurrence
-            (req.query as any)[key] = Array.isArray(value) ? value[0] : value;
+           sanitizedQuery[key] = Array.isArray(value) ? value[0] : value;
+        }
+        else {
+            sanitizedQuery[key] = value;
         }
         seen.add(key);
     }
+
+    Object.defineProperty(req, 'query', {
+        value: sanitizedQuery,
+        writable: true,
+        configurable: true,
+    });
 
     next();
 }
