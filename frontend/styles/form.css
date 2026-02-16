@@ -1,0 +1,141 @@
+/* ─── Flip Card 3D Mechanics ─────────────────────────────────────────── */
+.flip-card-scene {
+  perspective: 1000px;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 300px;
+  height: 350px;
+  transition: transform 0.7s ease;
+  transform-style: preserve-3d;
+}
+
+.flip-card-inner--flipped {
+  transform: rotateY(180deg);
+}
+
+.flip-card-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-card-face--back {
+  transform: rotateY(180deg);
+}
+
+/* ─── Glow Inputs (scoped to form) ───────────────────────────────────── */
+.form-input {
+  height: 2.5rem;
+  width: 100%;
+  border-radius: 0.375rem;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #f0f4ff;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #07080f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.form-input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+  font-weight: 400;
+}
+
+.form-input:focus {
+  border-color: #e555c7;
+  box-shadow:
+    0 0 0 3px rgba(229, 85, 199, 0.15),
+    0 0 12px rgba(229, 85, 199, 0.1);
+}
+
+/* ─── Glow Submit Button ─────────────────────────────────────────────── */
+.form-btn {
+  height: 2.5rem;
+  width: 7rem;
+  border-radius: 0.375rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  outline: none;
+  transition: box-shadow 0.2s, transform 0.15s;
+  background: linear-gradient(135deg, #c040aa 0%, #8833cc 100%);
+  border: 1px solid rgba(229, 85, 199, 0.45);
+  box-shadow: 0 0 14px rgba(229, 85, 199, 0.35), 3px 3px 0 #1a0030;
+}
+
+.form-btn:hover {
+  box-shadow: 0 0 22px rgba(229, 85, 199, 0.55), 3px 3px 0 #1a0030;
+}
+
+.form-btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+.form-btn:focus-visible {
+  outline: 2px solid #e555c7;
+  outline-offset: 2px;
+}
+
+/* ─── Face panel ─────────────────────────────────────────────────────── */
+.form-face {
+  background: linear-gradient(160deg, #13182a 0%, #0d1117 100%);
+  border: 1px solid rgba(229, 85, 199, 0.18);
+  box-shadow:
+    0 0 40px rgba(229, 85, 199, 0.08),
+    4px 4px 0 #06070e,
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.form-face::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 1.5rem;
+  right: 1.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(229, 85, 199, 0.45), transparent);
+  border-radius: 9999px;
+}
+
+/* ─── Toggle switch ──────────────────────────────────────────────────── */
+.form-switch {
+  position: relative;
+  height: 1.5rem;
+  width: 2.75rem;
+  border-radius: 0.375rem;
+  background: #0d1117;
+  border: 1px solid rgba(229, 85, 199, 0.28);
+  transition: box-shadow 0.2s;
+  cursor: pointer;
+  outline: none;
+}
+
+.form-switch:focus-visible {
+  outline: 2px solid #e555c7;
+  outline-offset: 2px;
+}
+
+.form-switch--on {
+  box-shadow: 0 0 10px rgba(229, 85, 199, 0.35), inset 0 0 8px rgba(229, 85, 199, 0.1);
+}
+
+.form-switch__thumb {
+  position: absolute;
+  bottom: 0.125rem;
+  left: 0.125rem;
+  height: 1rem;
+  width: 1rem;
+  border-radius: 0.25rem;
+  background: linear-gradient(135deg, #e555c7, #8833cc);
+  box-shadow: 0 0 8px rgba(229, 85, 199, 0.7);
+  transition: transform 0.3s;
+}
+
+.form-switch__thumb--on {
+  transform: translateX(20px);
+}
