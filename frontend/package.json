@@ -19,6 +19,7 @@
     "postprocessing": "^6.36.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "socket.io-client": "^4.8.3",
     "styled-components": "^6.3.9",
     "tailwind-merge": "^3.0.0",
     "tailwindcss-animate": "^1.0.7",
