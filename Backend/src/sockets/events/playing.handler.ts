@@ -19,7 +19,7 @@ export function registerPlayingHandlers(
         applyMiddleware(socket, (socket, data) => handlePlayCard(socket, data, io, roomManager))
     );
     
-    socket.on('play_card', (data: any) => playCard(socket, data));
+    socket.on('play_card', (data: any) => playCard(data));
 }
 
 /**

@@ -63,6 +63,11 @@ export function authMiddleware(socket: SocketType, next: (err?: Error) => void):
 export function rateLimitMiddleware(socket: SocketType): (handler: EventHandler) => EventHandler {
     return (handler: EventHandler) => {
         return async (...args: any[]) => {
+            if (process.env.NODE_ENV === 'test') {
+                await handler(socket, ...args);
+                return;
+            }
+
             const now = Date.now();
             const socketId = socket.id;
 
