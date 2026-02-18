@@ -27,10 +27,10 @@ export function registerRoomHandlers(
         applyMiddleware(socket, (socket, data) => handleLeaveRoom(socket, data, roomManager))
     );
 
-    socket.on('create_room', (data: any) => createRoom(socket, data));
-    socket.on('join_room', (data: any) => joinRoom(socket, data));
-    socket.on('start_game', (data: any) => startGame(socket, data));
-    socket.on('leave_room', (data: any) => leaveRoom(socket, data));
+    socket.on('create_room', (data: any) => createRoom(data));
+    socket.on('join_room', (data: any) => joinRoom(data));
+    socket.on('start_game', (data: any) => startGame(data));
+    socket.on('leave_room', (data: any) => leaveRoom(data));
 }
 
 /**
