@@ -146,8 +146,14 @@ export function waitForEvent<T = any>(socket: ClientSocket, event: string, timeo
 
 /** Connect a socket and wait for the 'connect' event. */
 export async function connectClient(socket: ClientSocket): Promise<void> {
-    if (socket.connected) return;
-    await waitForEvent(socket, 'connect');
+    // Re-check inside Promise executor to close the race window between socket
+    // creation and .once registration.
+    await new Promise<void>((resolve, reject) => {
+        if (socket.connected) { resolve(); return; }
+        const timer = setTimeout(() => reject(new Error('Timeout waiting for "connect"')), 5000);
+        socket.once('connect', () => { clearTimeout(timer); resolve(); });
+        socket.once('connect_error', (err: Error) => { clearTimeout(timer); reject(err); });
+    });
 }
 
 /** Create a room with 4 connected sockets, return roomId + ordered sockets. */
@@ -159,21 +165,24 @@ export async function createFullRoom(ctx: TestContext): Promise<{ roomId: string
 
     await Promise.all([connectClient(s1), connectClient(s2), connectClient(s3), connectClient(s4)]);
 
-    // Player 1 creates the room
+    // Register listener BEFORE emitting to avoid a race where the server
+    // (running in the same process with synchronous mocks) resolves the event
+    // before waitForEvent has registered its .once listener.
+    const createdPromise = waitForEvent<any>(s1, 'room_created');
     s1.emit('create_room', { config: { maxPlayers: 4 }, playerName: 'P1' });
-    const created = await waitForEvent<any>(s1, 'room_created');
+    const created = await createdPromise;
     const roomId = created.roomId as string;
 
-    // Players 2-4 join
-    s2.emit('join_room', { roomId, playerName: 'P2' });
-    s3.emit('join_room', { roomId, playerName: 'P3' });
-    s4.emit('join_room', { roomId, playerName: 'P4' });
-
-    await Promise.all([
+    // Same pattern: all listeners registered before any emit.
+    const joinPromises = Promise.all([
         waitForEvent(s2, 'room_joined'),
         waitForEvent(s3, 'room_joined'),
         waitForEvent(s4, 'room_joined'),
     ]);
+    s2.emit('join_room', { roomId, playerName: 'P2' });
+    s3.emit('join_room', { roomId, playerName: 'P3' });
+    s4.emit('join_room', { roomId, playerName: 'P4' });
+    await joinPromises;
 
     return { roomId, sockets: [s1, s2, s3, s4] };
 }

@@ -15,6 +15,7 @@ export function registerBiddingHandlers(
     roomManager: RoomManager
 ) {
     // ✅ Phase 20: Wrap handlers with performance timing
+    // applyMiddleware already captures socket in closure — do NOT pass socket again
     const placeBid = wrapWithTiming('place_bid',
         applyMiddleware(socket, (socket, data) => handlePlaceBid(socket, data, io, roomManager))
     );
@@ -25,9 +26,9 @@ export function registerBiddingHandlers(
         applyMiddleware(socket, (socket, data) => handleSetTrump(socket, data, io, roomManager))
     );
 
-    socket.on('place_bid', (data: any) => placeBid(socket, data));
-    socket.on('pass_bid', (data: any) => passBid(socket, data));
-    socket.on('set_trump', (data: any) => setTrump(socket, data));
+    socket.on('place_bid', (data: any) => placeBid(data));
+    socket.on('pass_bid', (data: any) => passBid(data));
+    socket.on('set_trump', (data: any) => setTrump(data));
 }
 
 /**

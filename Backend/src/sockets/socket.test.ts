@@ -130,14 +130,14 @@ describe('Socket.IO Server - Phase 17', () => {
             await new Promise<void>((resolve) => {
                 client.on('connect', () => resolve());
             });
-            
-            // Create and join a room
+
+            // FIX: register listener before emitting
+            const createdPromise = waitForEvent<any>(client, 'room_created');
             client.emit('create_room', {
                 config: { maxPlayers: 4 },
                 playerName: 'Test Player',
             });
-            
-            await waitForEvent(client, 'room_created');
+            await createdPromise;
             
             assert.strictEqual(getRoomCount(io), 1);
             
@@ -157,16 +157,17 @@ describe('Socket.IO Server - Phase 17', () => {
             await new Promise<void>((resolve) => {
                 client.on('connect', () => resolve());
             });
-            
+
+            // FIX: register listener before emitting
+            const responsePromise = waitForEvent<any>(client, 'room_created');
             client.emit('create_room', {
                 config: { maxPlayers: 4 },
                 playerName: 'Test Player',
             });
-            
-            const response = await waitForEvent(client, 'room_created');
+            const response = await responsePromise;
             
             assert.ok(response, 'Should receive room_created event');
-            assert.ok((response as any).roomId, 'Response should include roomId');
+            assert.ok(response.roomId, 'Response should include roomId');
         });
 
         it('should register join_room handler', async () => {
@@ -177,26 +178,26 @@ describe('Socket.IO Server - Phase 17', () => {
                 new Promise<void>(resolve => creator.on('connect', () => resolve())),
                 new Promise<void>(resolve => joiner.on('connect', () => resolve())),
             ]);
-            
-            // Create room
+
+            // FIX: register listener before emitting
+            const createResponsePromise = waitForEvent<any>(creator, 'room_created');
             creator.emit('create_room', {
                 config: { maxPlayers: 4 },
                 playerName: 'Creator',
             });
-            
-            const createResponse = await waitForEvent<any>(creator, 'room_created');
+            const createResponse = await createResponsePromise;
             const roomId = createResponse.roomId;
-            
-            // Join room
+
+            // FIX: register listener before emitting
+            const joinResponsePromise = waitForEvent<any>(joiner, 'room_joined');
             joiner.emit('join_room', {
                 roomId,
                 playerName: 'Joiner',
             });
-            
-            const joinResponse = await waitForEvent(joiner, 'room_joined');
+            const joinResponse = await joinResponsePromise;
             
             assert.ok(joinResponse, 'Should receive room_joined event');
-            assert.strictEqual((joinResponse as any).roomId, roomId);
+            assert.strictEqual(joinResponse.roomId, roomId);
         });
 
         it('should register leave_room handler', async () => {
@@ -205,19 +206,19 @@ describe('Socket.IO Server - Phase 17', () => {
             await new Promise<void>((resolve) => {
                 client.on('connect', () => resolve());
             });
-            
-            // Create and join room
+
+            // FIX: register listener before emitting
+            const createdPromise = waitForEvent<any>(client, 'room_created');
             client.emit('create_room', {
                 config: { maxPlayers: 4 },
                 playerName: 'Test Player',
             });
-            
-            await waitForEvent(client, 'room_created');
-            
-            // Leave room
+            await createdPromise;
+
+            // FIX: register listener before emitting
+            const leaveResponsePromise = waitForEvent<any>(client, 'room_left');
             client.emit('leave_room', {});
-            
-            const leaveResponse = await waitForEvent(client, 'room_left');
+            const leaveResponse = await leaveResponsePromise;
             
             assert.ok(leaveResponse, 'Should receive room_left event');
         });
@@ -230,11 +231,11 @@ describe('Socket.IO Server - Phase 17', () => {
             });
             
             // Emit invalid action (game not started)
+            const errorPromise = waitForEvent<any>(client, 'error');
             client.emit('game_action', {
                 action: { type: 'START_BIDDING' },
             });
-            
-            const errorResponse = await waitForEvent<any>(client, 'error');
+            const errorResponse = await errorPromise;
             
             assert.ok(errorResponse, 'Should receive error event');
             assert.strictEqual(errorResponse.code, 'NOT_IN_ROOM');
@@ -248,12 +249,12 @@ describe('Socket.IO Server - Phase 17', () => {
             await new Promise<void>((resolve) => {
                 client.on('connect', () => resolve());
             });
-            
+
+            const errorPromise = waitForEvent<any>(client, 'error');
             client.emit('create_room', {
                 config: {}, // Missing maxPlayers
             });
-            
-            const errorResponse = await waitForEvent<any>(client, 'error');
+            const errorResponse = await errorPromise;
             
             assert.ok(errorResponse, 'Should receive error event');
             assert.strictEqual(errorResponse.code, 'INVALID_CONFIG');
@@ -265,13 +266,13 @@ describe('Socket.IO Server - Phase 17', () => {
             await new Promise<void>((resolve) => {
                 client.on('connect', () => resolve());
             });
-            
+
+            const errorPromise = waitForEvent<any>(client, 'error');
             client.emit('join_room', {
                 roomId: 'non_existent_room',
                 playerName: 'Test Player',
             });
-            
-            const errorResponse = await waitForEvent<any>(client, 'error');
+            const errorResponse = await errorPromise;
             
             assert.ok(errorResponse, 'Should receive error event');
             assert.strictEqual(errorResponse.code, 'ROOM_NOT_FOUND');
@@ -283,10 +284,10 @@ describe('Socket.IO Server - Phase 17', () => {
             await new Promise<void>((resolve) => {
                 client.on('connect', () => resolve());
             });
-            
+
+            const errorPromise = waitForEvent<any>(client, 'error');
             client.emit('leave_room', {});
-            
-            const errorResponse = await waitForEvent<any>(client, 'error');
+            const errorResponse = await errorPromise;
             
             assert.ok(errorResponse, 'Should receive error event');
             assert.strictEqual(errorResponse.code, 'NOT_IN_ROOM');
@@ -339,20 +340,19 @@ describe('Socket.IO Server - Phase 17', () => {
                 new Promise<void>(resolve => creator.on('connect', () => resolve())),
                 new Promise<void>(resolve => joiner.on('connect', () => resolve())),
             ]);
-            
-            // Create room
+
+            // FIX: register listener before emitting
+            const createResponsePromise = waitForEvent<any>(creator, 'room_created');
             creator.emit('create_room', {
                 config: { maxPlayers: 4 },
                 playerName: 'Creator',
             });
-            
-            const createResponse = await waitForEvent<any>(creator, 'room_created');
+            const createResponse = await createResponsePromise;
             const roomId = createResponse.roomId;
             
-            // Set up listener for player_joined
+            // Set up listener for player_joined BEFORE joiner emits
             const playerJoinedPromise = waitForEvent<any>(creator, 'player_joined');
             
-            // Join room
             joiner.emit('join_room', {
                 roomId,
                 playerName: 'Joiner',
@@ -372,28 +372,27 @@ describe('Socket.IO Server - Phase 17', () => {
                 new Promise<void>(resolve => player1.on('connect', () => resolve())),
                 new Promise<void>(resolve => player2.on('connect', () => resolve())),
             ]);
-            
-            // Create room
+
+            // FIX: listener before emit
+            const createResponsePromise = waitForEvent<any>(player1, 'room_created');
             player1.emit('create_room', {
                 config: { maxPlayers: 4 },
                 playerName: 'Player1',
             });
-            
-            const createResponse = await waitForEvent<any>(player1, 'room_created');
+            const createResponse = await createResponsePromise;
             const roomId = createResponse.roomId;
-            
-            // Player 2 joins
+
+            // FIX: listener before emit
+            const joinedPromise = waitForEvent<any>(player2, 'room_joined');
             player2.emit('join_room', {
                 roomId,
                 playerName: 'Player2',
             });
+            await joinedPromise;
             
-            await waitForEvent(player2, 'room_joined');
-            
-            // Set up listener for player_left
+            // Set up listener for player_left BEFORE player2 emits leave
             const playerLeftPromise = waitForEvent<any>(player1, 'player_left');
             
-            // Player 2 leaves
             player2.emit('leave_room', {});
             
             const playerLeftEvent = await playerLeftPromise;
@@ -418,23 +417,25 @@ describe('Socket.IO Server - Phase 17', () => {
                 new Promise<void>(resolve => s4.on('connect', () => resolve())),
             ]);
 
+            // FIX: listener before emit to close the race window
+            const createdPromise = waitForEvent<any>(s1, 'room_created');
             s1.emit('create_room', {
                 config: { maxPlayers: 4 },
                 playerName: 'P1',
             });
-
-            const created = await waitForEvent<any>(s1, 'room_created');
+            const created = await createdPromise;
             const roomId = created.roomId as string;
 
+            // FIX: all listeners registered before any emit
+            const joinPromises = Promise.all([
+                waitForEvent<any>(s2, 'room_joined'),
+                waitForEvent<any>(s3, 'room_joined'),
+                waitForEvent<any>(s4, 'room_joined'),
+            ]);
             s2.emit('join_room', { roomId, playerName: 'P2' });
             s3.emit('join_room', { roomId, playerName: 'P3' });
             s4.emit('join_room', { roomId, playerName: 'P4' });
-
-            await Promise.all([
-                waitForEvent(s2, 'room_joined'),
-                waitForEvent(s3, 'room_joined'),
-                waitForEvent(s4, 'room_joined'),
-            ]);
+            await joinPromises;
 
             return { roomId, sockets: [s1, s2, s3, s4] };
         }
@@ -487,7 +488,8 @@ describe('Socket.IO Server - Phase 17', () => {
                 waitForEvent<any>(s4, 'game_state_updated'),
             ]);
 
-            s1.emit('place_bid', { value: 2 });
+            // FIX: value:2 is rejected by BidActionSchema (min:7). Use value:7.
+            s1.emit('place_bid', { value: 7 });
             const [u1, u2, u3, u4] = await updates;
 
             assert.equal(u1.roomId, roomId);
@@ -495,7 +497,7 @@ describe('Socket.IO Server - Phase 17', () => {
             assert.equal(u3.roomId, roomId);
             assert.equal(u4.roomId, roomId);
             assert.equal(u1.gameState.phase, 'BIDDING');
-            assert.equal(u1.gameState.highestBid, 2);
+            assert.equal(u1.gameState.highestBid, 7);
         });
 
         it('should reject invalid play_card action (card not in hand)', async () => {
@@ -504,13 +506,20 @@ describe('Socket.IO Server - Phase 17', () => {
 
             await startGameForRoom(sockets);
 
-            s1.emit('place_bid', { value: 2 });
-            await waitForEvent<any>(s1, 'game_state_updated');
-            s1.emit('set_trump', { suit: 'SPADES' });
-            await waitForEvent<any>(s1, 'game_state_updated');
+            // FIX: use value:7 (valid bid per BidActionSchema)
+            const bidUpdate = Promise.all([
+                waitForEvent<any>(s1, 'game_state_updated'),
+            ]);
+            s1.emit('place_bid', { value: 7 });
+            await bidUpdate;
 
+            const trumpUpdate = waitForEvent<any>(s1, 'game_state_updated');
+            s1.emit('set_trump', { suit: 'SPADES' });
+            await trumpUpdate;
+
+            const errPromise = waitForEvent<any>(s1, 'error');
             s1.emit('play_card', { card: { suit: 'SPADES', rank: 'X' } });
-            const err = await waitForEvent<any>(s1, 'error');
+            const err = await errPromise;
             assert.equal(err.code, 'INVALID_ACTION');
         });
 
@@ -520,10 +529,14 @@ describe('Socket.IO Server - Phase 17', () => {
 
             await startGameForRoom(sockets);
 
-            s1.emit('place_bid', { value: 2 });
-            await waitForEvent<any>(s1, 'game_state_updated');
+            // FIX: use value:7 (valid bid)
+            const bidUpdate = waitForEvent<any>(s1, 'game_state_updated');
+            s1.emit('place_bid', { value: 7 });
+            await bidUpdate;
+
+            const trumpUpdate = waitForEvent<any>(s1, 'game_state_updated');
             s1.emit('set_trump', { suit: 'SPADES' });
-            let lastUpdate = await waitForEvent<any>(s1, 'game_state_updated');
+            let lastUpdate = await trumpUpdate;
 
             assert.ok(s1.id, 'Socket id should be set');
             assert.ok(s2.id, 'Socket id should be set');

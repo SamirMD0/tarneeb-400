@@ -33,14 +33,20 @@ export function initializeSocketServer(httpServer: HTTPServer): Server<
     });
 
     // Phase 19: Socket Connection Rate Limiting
-    io.use(async (socket, next) => {
-        try {
-            await socketConnectionLimiter.consume(socket.handshake.address);
-            next();
-        } catch (e) {
-            next(new Error('Too many connection attempts, please try again later'));
-        }
-    });
+    // Skip in test environment: all test clients share the same IP (::1), and
+    // socketConnectionLimiter allows only 10 connections per 60 s. The load test
+    // spins up 10 rooms × 4 clients = 40 sockets, which would start failing after
+    // the 10th socket. NODE_ENV=test bypasses this limiter entirely.
+    if (process.env.NODE_ENV !== 'test') {
+        io.use(async (socket, next) => {
+            try {
+                await socketConnectionLimiter.consume(socket.handshake.address);
+                next();
+            } catch (e) {
+                next(new Error('Too many connection attempts, please try again later'));
+            }
+        });
+    }
 
     // Connection event
     io.on('connection', (socket: Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>) => {

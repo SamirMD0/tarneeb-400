@@ -4,7 +4,7 @@ import { Server, Socket } from 'socket.io';
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from '../../types/socket.types.js';
 import type { GameAction } from '../../game/actions.js';
 import type { RoomManager } from '../../rooms/roomManager.js';
-import { applyMiddleware } from '../socketMiddleware.js';
+import { errorBoundary } from '../socketMiddleware.js';
 import { metrics } from '../../lib/metrics.js';
 
 type SocketType = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
@@ -15,11 +15,10 @@ export function registerPlayingHandlers(
     roomManager: RoomManager
 ) {
     // ✅ Phase 20: Wrap handler with performance timing
-    const playCard = wrapWithTiming('play_card',
-        applyMiddleware(socket, (socket, data) => handlePlayCard(socket, data, io, roomManager))
-    );
-    
-    socket.on('play_card', (data: any) => playCard(socket, data));
+    // errorBoundary wrapper only; rate limit excluded for play_card
+    const safePlay = errorBoundary((sock, data) => handlePlayCard(sock, data, io, roomManager));    const playCard = wrapWithTiming('play_card', (data: any) => safePlay(socket, data));
+
+    socket.on('play_card', (data: any) => playCard(data));
 }
 
 /**
@@ -112,3 +111,4 @@ async function handlePlayCard(
         gameState: state,
     });
 }
+

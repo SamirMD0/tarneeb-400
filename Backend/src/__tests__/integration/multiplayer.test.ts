@@ -130,12 +130,16 @@ describe('Multiplayer Socket Integration', { timeout: DEFAULT_TIMEOUT }, () => {
         const s2 = createTestClient(ctx);
         await Promise.all([connectClient(s1), connectClient(s2)]);
 
+        // FIX: register listener before emitting to avoid race condition
+        const createdPromise = waitForEvent<any>(s1, 'room_created');
         s1.emit('create_room', { config: { maxPlayers: 4 }, playerName: 'P1' });
-        const created = await waitForEvent<any>(s1, 'room_created');
+        const created = await createdPromise;
         const roomId = created.roomId;
 
+        // FIX: same pattern for join_room
+        const joinedPromise = waitForEvent<any>(s2, 'room_joined');
         s2.emit('join_room', { roomId, playerName: 'P2' });
-        await waitForEvent(s2, 'room_joined');
+        await joinedPromise;
 
         // Try starting with only 2 players
         const errPromise = waitForEvent<any>(s1, 'error');
