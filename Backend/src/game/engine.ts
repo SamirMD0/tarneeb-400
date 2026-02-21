@@ -71,7 +71,7 @@ export class GameEngine {
             }
 
             // Phase 15: Persist game when it ends
-            if (this.isGameOver() && !this.hasPersisted) {
+            if (this.isGameOver() && !this.hasPersisted && process.env.NODE_ENV !== 'test') {
                 this.persistGame();
             }
 
