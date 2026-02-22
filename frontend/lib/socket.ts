@@ -7,3 +7,6 @@ export const createSocket = (): Socket<ServerToClientEvents, ClientToServerEvent
     transports: ['websocket'],
     autoConnect: false,
   });
+
+  export { getSocket } from './socketSingleton';
+export type { AppSocket } from './socketSingleton';
