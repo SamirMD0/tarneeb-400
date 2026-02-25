@@ -38,14 +38,13 @@ export interface TeamState {
 export interface GameState {
   players: PlayerState[];
   teams: Record<1 | 2, TeamState>;
-  deck: Card[];
   trumpSuit?: Suit;
   currentPlayerIndex: number;      // Index into players[] — who acts next
   trickStartPlayerIndex?: number;
   phase: GamePhase;
   trick: Card[];                   // Cards played in current trick, 0–4 items
   highestBid?: number;
-  bidderId?: string;               // socket.id of the player who won the bid
+  bidderId?: string;               // stable playerId of the player who won the bid
 }
 
 // ─── Derived view (computed in useGameState, consumed by components) ──────────
@@ -61,5 +60,5 @@ export interface DerivedGameView {
   myHand: Card[];
   currentTrick: Card[];
   phase: GamePhase | null;
-  gameOver: { winner: 1 | 2; finalScore: unknown } | null;
+  gameOver: { winner: 1 | 2; finalScore: { team1: number; team2: number } } | null;
 }

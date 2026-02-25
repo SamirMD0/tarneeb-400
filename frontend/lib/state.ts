@@ -40,7 +40,7 @@ export function makeInitialConnectionState(): ConnectionState {
 
 export interface GameStore {
   gameState: GameState | null;
-  gameOver: { winner: 1 | 2; finalScore: unknown } | null;
+  gameOver: { winner: 1 | 2; finalScore: { team1: number; team2: number } } | null;
   lastError: { code: string; message: string } | null;
 }
 
@@ -131,6 +131,7 @@ export interface RoomDispatchers {
   joinRoom: (roomId: string, playerName?: string) => void;
   leaveRoom: () => void;
   startGame: () => void;
+  refreshRoomList: () => void;
 }
 
 export interface GameDispatchers {

@@ -35,7 +35,7 @@ export function useRoomEvents({
         type: 'ROOM_JOINED',
         roomId: data.roomId,
         room: data.room,
-        myPlayerId: socket.id ?? '',
+        myPlayerId: data.myPlayerId,  // ← from server, not socket.id
       });
     }
 
@@ -44,7 +44,7 @@ export function useRoomEvents({
         type: 'ROOM_JOINED',
         roomId: data.roomId,
         room: data.room,
-        myPlayerId: socket.id ?? '',
+        myPlayerId: data.myPlayerId,  // ← from server, not socket.id
       });
     }
 
@@ -68,18 +68,25 @@ export function useRoomEvents({
       stableDispatch({ type: 'ROOM_UPDATED', room: data.room });
     }
 
+    function onRoomListUpdated(data: Parameters<import('@/types/socket.types').ServerToClientEvents['room_list_updated']>[0]) {
+      stableDispatch({ type: 'ROOM_LIST_UPDATED', rooms: data.rooms });
+    }
+
     function onError(data: Parameters<import('@/types/socket.types').ServerToClientEvents['error']>[0]) {
       stableDispatch({ type: 'ERROR', error: data });
     }
 
     // ── Reconnect sync ──────────────────────────────────────────────────────────
-    // When the socket reconnects, if we were in a room, re-emit join_room so the
-    // server adds this socket back to the Socket.IO room channel and re-broadcasts
-    // the current room + game state. This is the ONLY recovery mechanism — no
-    // local state cache is used.
+    // When the socket reconnects, if we were in a room, re-emit join_room with
+    // our stable playerId so the server matches us to our existing player entry
+    // instead of treating us as a new player. This is the ONLY recovery mechanism.
     function onReconnect() {
       if (roomId) {
-        socket.emit('join_room', { roomId, playerName: undefined });
+        socket.emit('join_room', {
+          roomId,
+          playerName: undefined,
+          playerId: myPlayerId ?? undefined,  // ← send stable identity for reconnect
+        });
       }
     }
 
@@ -91,6 +98,7 @@ export function useRoomEvents({
     socket.on('player_left', onPlayerLeft);
     socket.on('player_disconnected', onPlayerDisconnected);
     socket.on('player_reconnected', onPlayerReconnected);
+    socket.on('room_list_updated', onRoomListUpdated);
     socket.on('error', onError);
     socket.on('connect', onReconnect);
 
@@ -103,8 +111,9 @@ export function useRoomEvents({
       socket.off('player_left', onPlayerLeft);
       socket.off('player_disconnected', onPlayerDisconnected);
       socket.off('player_reconnected', onPlayerReconnected);
+      socket.off('room_list_updated', onRoomListUpdated);
       socket.off('error', onError);
       socket.off('connect', onReconnect);
     };
-  }, [socket, stableDispatch, roomId]); // roomId in deps so reconnect always has current value
+  }, [socket, stableDispatch, roomId, myPlayerId]); // myPlayerId in deps so reconnect always sends current value
 }

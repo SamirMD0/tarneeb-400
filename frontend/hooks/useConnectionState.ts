@@ -1,19 +1,6 @@
 // Frontend/hooks/useConnectionState.ts
 // Tracks socket transport state only: connectivity, reconnection, and latency.
 // Owns zero domain state. RoomState and GameStore must never be updated here.
-//
-// Design decisions:
-//   - useReducer over multiple useState calls: connection fields update together
-//     on a single socket event (e.g. reconnect sets isConnecting=false,
-//     isConnected=true, reconnectAttempt=0 atomically). Separate useState calls
-//     would cause three renders for one event.
-//   - Latency: measured via socket's built-in ping event. Socket.IO emits 'ping'
-//     internally; we record Date.now() on each ping and listen for the
-//     corresponding 'pong' to calculate RTT. This requires no custom server code.
-//   - All handlers are named function declarations inside useEffect so socket.off()
-//     can remove the exact reference. Anonymous arrows cannot be removed.
-//   - Stable return: the returned object is memoized so consumers don't re-render
-//     when unrelated state changes in the tree.
 
 'use client';
 
@@ -26,8 +13,6 @@ import {
 } from '@/lib/state';
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
-// useReducer is justified here: all five fields update as a unit on socket events.
-// Individual useState calls would produce 3–5 intermediate renders per event.
 
 type ConnectionAction =
   | { type: 'CONNECTING' }
@@ -40,44 +25,29 @@ type ConnectionAction =
 
 function connectionReducer(
   state: ConnectionState,
-  action: ConnectionAction
+  action: ConnectionAction,
 ): ConnectionState {
   switch (action.type) {
     case 'CONNECTING':
       return { ...state, isConnecting: true, lastError: null };
 
     case 'CONNECTED':
-      // All reconnection tracking clears atomically on successful connect.
       return {
         isConnected: true,
         isConnecting: false,
         reconnectAttempt: 0,
         lastError: null,
-        latencyMs: state.latencyMs, // preserve last known latency
+        latencyMs: state.latencyMs,
       };
 
     case 'DISCONNECTED':
-      return {
-        ...state,
-        isConnected: false,
-        isConnecting: false,
-        // reconnectAttempt preserved — Socket.IO will fire RECONNECT_ATTEMPT next
-      };
+      return { ...state, isConnected: false, isConnecting: false };
 
     case 'RECONNECT_ATTEMPT':
-      return {
-        ...state,
-        isConnecting: true,
-        reconnectAttempt: action.attempt,
-      };
+      return { ...state, isConnecting: true, reconnectAttempt: action.attempt };
 
     case 'CONNECT_ERROR':
-      return {
-        ...state,
-        isConnecting: false,
-        isConnected: false,
-        lastError: action.message,
-      };
+      return { ...state, isConnecting: false, isConnected: false, lastError: action.message };
 
     case 'LATENCY_MEASURED':
       return { ...state, latencyMs: action.ms };
@@ -93,73 +63,60 @@ function connectionReducer(
 // ─── Public return shape ───────────────────────────────────────────────────────
 
 export interface UseConnectionStateReturn extends ConnectionState {
-  /** Manually initiate connection. Safe to call if already connected. */
   connect: () => void;
-  /** Manually disconnect. Safe to call if already disconnected. */
   disconnect: () => void;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useConnectionState(): UseConnectionStateReturn {
+  // getSocket() returns null during SSR — all socket access below must be
+  // guarded. The socket is a stable singleton so this value never changes
+  // after the first browser render.
   const socket = getSocket();
 
   const [state, dispatch] = useReducer(
     connectionReducer,
-    // Hydrate from live socket state so first render is accurate even if the
-    // socket singleton connected before this hook mounted.
     undefined,
     (): ConnectionState => ({
       ...makeInitialConnectionState(),
-      isConnected: socket.connected,
-    })
+      // socket is null during SSR; default to false
+      isConnected: socket?.connected ?? false,
+    }),
   );
 
-  // pingStartRef: records the timestamp when the internal Socket.IO ping was
-  // sent so we can compute RTT when the pong arrives.
   const pingStartRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // ── Named handlers (required for socket.off by reference) ─────────────────
+    // No socket in SSR or if env URL is missing — nothing to subscribe to.
+    if (!socket) return;
 
     function onConnect() {
       dispatch({ type: 'CONNECTED' });
     }
-
     function onDisconnect() {
       dispatch({ type: 'DISCONNECTED' });
     }
-
     function onConnectError(err: Error) {
       dispatch({ type: 'CONNECT_ERROR', message: err.message });
     }
-
-    // Socket.IO fires 'reconnect_attempt' (number) on each retry.
     function onReconnectAttempt(attempt: number) {
       dispatch({ type: 'RECONNECT_ATTEMPT', attempt });
     }
-
-    // Socket.IO internal ping — fires before the server pong.
-    // 'ping' is emitted by the Socket.IO client engine when it sends a heartbeat.
     function onPing() {
       pingStartRef.current = Date.now();
     }
-
-    // 'pong' fires when the server heartbeat response arrives.
-    // latency parameter is the RTT in ms provided by Socket.IO engine >= v3.
     function onPong(latency?: number) {
-      // Prefer the engine-provided latency; fall back to manual measurement.
-      const ms = typeof latency === 'number' ? latency : pingStartRef.current !== null
-        ? Date.now() - pingStartRef.current
-        : null;
-
-      if (ms !== null) {
-        dispatch({ type: 'LATENCY_MEASURED', ms });
-      }
+      const ms =
+        typeof latency === 'number'
+          ? latency
+          : pingStartRef.current !== null
+            ? Date.now() - pingStartRef.current
+            : null;
+      if (ms !== null) dispatch({ type: 'LATENCY_MEASURED', ms });
       pingStartRef.current = null;
     }
 
-    // Register all listeners
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('connect_error', onConnectError);
@@ -167,7 +124,7 @@ export function useConnectionState(): UseConnectionStateReturn {
     socket.io.engine?.on('ping', onPing);
     socket.io.engine?.on('pong', onPong);
 
-    // Sync in case socket connected before this effect ran (singleton may already be live)
+    // Sync in case socket connected before this effect ran
     if (socket.connected && !state.isConnected) {
       dispatch({ type: 'CONNECTED' });
     }
@@ -181,26 +138,24 @@ export function useConnectionState(): UseConnectionStateReturn {
       socket.io.engine?.off('pong', onPong);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socket]); // socket is the stable singleton — this effect runs once
+  }, [socket]);
 
   const connect = useCallback(() => {
-    if (!socket.connected) {
+    if (socket && !socket.connected) {
       dispatch({ type: 'CONNECTING' });
       socket.connect();
     }
   }, [socket]);
 
   const disconnect = useCallback(() => {
-    if (socket.connected) {
+    if (socket?.connected) {
       socket.disconnect();
     }
   }, [socket]);
 
-  // Stable return shape — memoized so downstream consumers don't re-render
-  // when siblings in the component tree update unrelated context slices.
   return useMemo(
     () => ({ ...state, connect, disconnect }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state, connect, disconnect]
+    [state, connect, disconnect],
   );
 }

@@ -4,12 +4,15 @@ import { Server, Socket } from 'socket.io';
 import type {
     ClientToServerEvents,
     ServerToClientEvents,
-    SocketData
+    SocketData,
+    SerializedRoom,
+    SanitizedGameState
 } from '../types/socket.types.js';
 import { RoomManager } from '../rooms/roomManager.js';
 import { registerAllSocketEventHandlers } from './events/index.js';
 import { cleanupSocketData } from './socketMiddleware.js';
 import type { GameAction } from '../game/actions.js';
+import type { GameState } from '../game/state.js';
 import { logger } from '../lib/logger.js';
 import { metrics } from '../lib/metrics.js';
 
@@ -23,6 +26,27 @@ const roomManager = new RoomManager();
  */
 function emitError(socket: SocketType, code: string, message: string): void {
     socket.emit('error', { code, message });
+}
+
+/**
+ * Strip `deck` from GameState before broadcasting.
+ */
+function sanitizeGameState(state: Readonly<GameState>): SanitizedGameState {
+    const { deck, ...safe } = state;
+    return safe;
+}
+
+/**
+ * Serialize room for client transmission.
+ */
+function serializeRoom(room: any): SerializedRoom {
+    return {
+        id: room.id,
+        players: Array.from(room.players.values()),
+        config: room.config,
+        hasGame: !!room.gameEngine,
+        gameState: room.gameEngine ? sanitizeGameState(room.gameEngine.getState()) : undefined,
+    };
 }
 
 /**
@@ -130,10 +154,10 @@ async function handleGameAction(
             return;
         }
 
-        // Broadcast updated game state
+        // Broadcast updated game state (deck stripped)
         io.to(roomId).emit('game_state_updated', {
             roomId,
-            gameState: room.gameEngine.getState(),
+            gameState: sanitizeGameState(room.gameEngine.getState()),
         });
 
         logger.debug('Action dispatched', { type: action.type, roomId });
@@ -149,20 +173,22 @@ async function handleGameAction(
 
 /**
  * Handle socket disconnection
+ * Uses stable playerId (not socket.id) to mark the correct player as disconnected.
  */
-async function handleDisconnect(socket: SocketType, io: Server): Promise<void> {
+async function handleDisconnect(socket: SocketType, io: Server<ClientToServerEvents, ServerToClientEvents, {}, SocketData>): Promise<void> {
     const roomId = socket.data.roomId;
+    const playerId = socket.data.playerId;
 
-    if (roomId) {
+    if (roomId && playerId) {
         try {
             const room = await roomManager.getRoom(roomId);
             if (room) {
-                await room.markPlayerDisconnected(socket.id);
+                await room.markPlayerDisconnected(playerId);
                 io.to(roomId).emit('player_disconnected', {
-                    playerId: socket.id,
+                    playerId,
                     room: serializeRoom(room),
                 });
-                logger.debug('Player marked disconnected', { roomId, playerId: socket.id });
+                logger.debug('Player marked disconnected', { roomId, playerId });
             }
         } catch (error) {
             logger.error('Error handling disconnect', {
@@ -173,19 +199,6 @@ async function handleDisconnect(socket: SocketType, io: Server): Promise<void> {
     }
 
     cleanupSocketData(socket.id);
-}
-
-/**
- * Serialize room for client transmission
- */
-function serializeRoom(room: any): any {
-    return {
-        id: room.id,
-        players: Array.from(room.players.values()),
-        config: room.config,
-        hasGame: !!room.gameEngine,
-        gameState: room.gameEngine ? room.gameEngine.getState() : undefined,
-    };
 }
 
 export { roomManager };

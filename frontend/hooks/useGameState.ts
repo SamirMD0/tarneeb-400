@@ -7,19 +7,17 @@
 
 import { useReducer, useMemo } from 'react';
 import type { GameState, DerivedGameView } from '@/types/game.types';
+import { replaceGameSnapshot, type GameStore } from '@/lib/state';
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
 
-interface GameStateStore {
-  gameState: GameState | null;
-  gameOver: { winner: 1 | 2; finalScore: unknown } | null;
-  lastError: { code: string; message: string } | null;
-}
+// Re-use the canonical GameStore type from lib/state.ts
+type GameStateStore = GameStore;
 
 export type GameStateAction =
   | { type: 'GAME_STARTED'; gameState: GameState }
   | { type: 'STATE_UPDATED'; gameState: GameState }
-  | { type: 'GAME_OVER'; winner: 1 | 2; finalScore: unknown }
+  | { type: 'GAME_OVER'; winner: 1 | 2; finalScore: { team1: number; team2: number } }
   | { type: 'SET_ERROR'; error: { code: string; message: string } }
   | { type: 'CLEAR_ERROR' };
 
@@ -32,12 +30,12 @@ const initialGameStore: GameStateStore = {
 function gameStateReducer(state: GameStateStore, action: GameStateAction): GameStateStore {
   switch (action.type) {
     case 'GAME_STARTED':
-      // Full snapshot — replace entirely, clear any stale error
-      return { ...state, gameState: action.gameState, lastError: null };
+      // Full snapshot replacement — delegates to centralized utility
+      return replaceGameSnapshot(state, action.gameState);
 
     case 'STATE_UPDATED':
-      // Full snapshot from backend after every accepted action — always replace
-      return { ...state, gameState: action.gameState, lastError: null };
+      // Full snapshot replacement — same canonical function, never merge
+      return replaceGameSnapshot(state, action.gameState);
 
     case 'GAME_OVER':
       return {

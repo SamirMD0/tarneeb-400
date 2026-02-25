@@ -1,40 +1,57 @@
-import "@/styles/cards.css";
+import type { SerializedRoom } from '@/types/room.types';
+import type { FullDerivedGameView } from '@/hooks/useDerivedGameView';
+import '@/styles/cards.css';
 
-type GamePhase = "waiting" | "starting" | "in-progress";
+interface RoomStatusProps {
+  room: SerializedRoom;
+  derived: FullDerivedGameView;
+}
 
-const MOCK_STATUS = {
-  phase: "waiting" as GamePhase,
-  round: null as number | null,
-  trick: null as number | null,
-  trump: null as string | null,
-};
+function hexToRgb(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `${r},${g},${b}`;
+}
 
-const PHASE_CONFIG: Record<
-  GamePhase,
-  { label: string; description: string; color: string; suit: string }
-> = {
-  waiting: {
-    label: "Waiting",
-    description: "Waiting for all players to join and ready up.",
-    color: "#55ffaa",
-    suit: "♦",
-  },
-  starting: {
-    label: "Starting",
-    description: "Game is about to begin. Get ready!",
-    color: "#ffaa33",
-    suit: "♥",
-  },
-  "in-progress": {
-    label: "In Progress",
-    description: "Game is underway.",
-    color: "#e555c7",
-    suit: "♠",
-  },
-};
+export function RoomStatus({ room, derived }: RoomStatusProps) {
+  const phase = derived.phase;
+  const trickSummary = derived.trickSummary;
 
-export function RoomStatus() {
-  const config = PHASE_CONFIG[MOCK_STATUS.phase];
+  type DisplayPhase = 'waiting' | 'starting' | 'in-progress';
+
+  let displayPhase: DisplayPhase = 'waiting';
+  if (phase === 'BIDDING' || phase === 'PLAYING' || phase === 'SCORING') {
+    displayPhase = 'in-progress';
+  } else if (room.hasGame) {
+    displayPhase = 'starting';
+  }
+
+  const PHASE_CONFIG: Record<
+    DisplayPhase,
+    { label: string; description: string; color: string; suit: string }
+  > = {
+    waiting: {
+      label: 'Waiting',
+      description: 'Waiting for all players to join and the host to start.',
+      color: '#55ffaa',
+      suit: '♦',
+    },
+    starting: {
+      label: 'Starting',
+      description: 'Game is about to begin. Get ready!',
+      color: '#ffaa33',
+      suit: '♥',
+    },
+    'in-progress': {
+      label: 'In Progress',
+      description: 'Game is underway.',
+      color: '#e555c7',
+      suit: '♠',
+    },
+  };
+
+  const config = PHASE_CONFIG[displayPhase];
 
   return (
     <section aria-labelledby="status-heading" className="glow-panel p-5 relative">
@@ -79,10 +96,11 @@ export function RoomStatus() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span
-              className={`glow-badge ${MOCK_STATUS.phase === "waiting"
-                  ? "glow-badge--waiting"
-                  : "glow-badge--progress"
-                }`}
+              className={`glow-badge ${
+                displayPhase === 'waiting'
+                  ? 'glow-badge--waiting'
+                  : 'glow-badge--progress'
+              }`}
             >
               {config.label}
             </span>
@@ -91,21 +109,21 @@ export function RoomStatus() {
         </div>
       </div>
 
-      {MOCK_STATUS.phase === "in-progress" && (
+      {displayPhase === 'in-progress' && (
         <>
           <div className="glow-divider" />
           <dl className="grid grid-cols-3 gap-3 text-center">
             {[
-              { label: "Round", value: MOCK_STATUS.round ?? "—" },
-              { label: "Trick", value: MOCK_STATUS.trick ?? "—" },
-              { label: "Trump", value: MOCK_STATUS.trump ?? "—" },
+              { label: 'Tricks (T1)', value: trickSummary.team1TricksWon },
+              { label: 'Tricks (T2)', value: trickSummary.team2TricksWon },
+              { label: 'Trump', value: derived.phase === 'PLAYING' && derived.myPlayer ? '✓' : '—' },
             ].map(({ label, value }) => (
               <div
                 key={label}
                 className="rounded-md p-2"
                 style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
                 }}
               >
                 <dt className="text-xs text-slate-500 uppercase tracking-wider">
@@ -121,11 +139,4 @@ export function RoomStatus() {
       )}
     </section>
   );
-}
-
-function hexToRgb(hex: string): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `${r},${g},${b}`;
 }

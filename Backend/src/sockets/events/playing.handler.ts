@@ -1,13 +1,22 @@
 // Backend/src/sockets/events/playing.handler.ts - Phase 20: Performance Monitoring
 
 import { Server, Socket } from 'socket.io';
-import type { ClientToServerEvents, ServerToClientEvents, SocketData } from '../../types/socket.types.js';
+import type { ClientToServerEvents, ServerToClientEvents, SocketData, SanitizedGameState } from '../../types/socket.types.js';
 import type { GameAction } from '../../game/actions.js';
+import type { GameState } from '../../game/state.js';
 import type { RoomManager } from '../../rooms/roomManager.js';
 import { errorBoundary } from '../socketMiddleware.js';
 import { metrics } from '../../lib/metrics.js';
 
 type SocketType = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
+
+/**
+ * Strip `deck` from GameState before broadcasting.
+ */
+function sanitizeGameState(state: Readonly<GameState>): SanitizedGameState {
+    const { deck, ...safe } = state;
+    return safe;
+}
 
 export function registerPlayingHandlers(
     socket: SocketType,
@@ -16,7 +25,8 @@ export function registerPlayingHandlers(
 ) {
     // ✅ Phase 20: Wrap handler with performance timing
     // errorBoundary wrapper only; rate limit excluded for play_card
-    const safePlay = errorBoundary((sock, data) => handlePlayCard(sock, data, io, roomManager));    const playCard = wrapWithTiming('play_card', (data: any) => safePlay(socket, data));
+    const safePlay = errorBoundary((sock, data) => handlePlayCard(sock, data, io, roomManager));
+    const playCard = wrapWithTiming('play_card', (data: any) => safePlay(socket, data));
 
     socket.on('play_card', (data: any) => playCard(data));
 }
@@ -77,9 +87,12 @@ async function handlePlayCard(
         return;
     }
 
+    // Use stable playerId from socket.data, not socket.id
+    const playerId = socket.data.playerId || socket.id;
+
     const action: GameAction = {
         type: 'PLAY_CARD',
-        playerId: socket.id,
+        playerId,
         card,
     } as any;
 
@@ -106,9 +119,24 @@ async function handlePlayCard(
         }
     }
 
+    // Broadcast updated state (deck stripped)
     io.to(roomId).emit('game_state_updated', {
         roomId,
-        gameState: state,
+        gameState: sanitizeGameState(state),
     });
-}
 
+    // ── Fix 4: Emit game_over when the game ends ──────────────────────────
+    if (room.gameEngine.isGameOver()) {
+        const winner = room.gameEngine.getWinner();
+        if (winner) {
+            io.to(roomId).emit('game_over', {
+                roomId,
+                winner,
+                finalScore: {
+                    team1: state.teams[1].score,
+                    team2: state.teams[2].score,
+                },
+            });
+        }
+    }
+}

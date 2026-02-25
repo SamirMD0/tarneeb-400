@@ -1,13 +1,22 @@
 // Backend/src/sockets/events/bidding.handler.ts - Phase 20: Performance Monitoring
 
 import { Server, Socket } from 'socket.io';
-import type { ClientToServerEvents, ServerToClientEvents, SocketData } from '../../types/socket.types.js';
+import type { ClientToServerEvents, ServerToClientEvents, SocketData, SanitizedGameState } from '../../types/socket.types.js';
 import type { GameAction } from '../../game/actions.js';
+import type { GameState } from '../../game/state.js';
 import type { RoomManager } from '../../rooms/roomManager.js';
 import { applyMiddleware } from '../socketMiddleware.js';
 import { metrics } from '../../lib/metrics.js';
 
 type SocketType = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
+
+/**
+ * Strip `deck` from GameState before broadcasting.
+ */
+function sanitizeGameState(state: Readonly<GameState>): SanitizedGameState {
+    const { deck, ...safe } = state;
+    return safe;
+}
 
 export function registerBiddingHandlers(
     socket: SocketType,
@@ -74,7 +83,9 @@ async function handlePlaceBid(
         return;
     }
 
-    const action: GameAction = { type: 'BID', playerId: socket.id, value };
+    // Use stable playerId from socket.data, not socket.id
+    const playerId = socket.data.playerId || socket.id;
+    const action: GameAction = { type: 'BID', playerId, value };
     const success = room.gameEngine.dispatch(action);
 
     if (!success) {
@@ -82,7 +93,7 @@ async function handlePlaceBid(
         return;
     }
 
-    io.to(roomId).emit('game_state_updated', { roomId, gameState: room.gameEngine.getState() });
+    io.to(roomId).emit('game_state_updated', { roomId, gameState: sanitizeGameState(room.gameEngine.getState()) });
 }
 
 async function handlePassBid(
@@ -108,7 +119,9 @@ async function handlePassBid(
         return;
     }
 
-    const action: GameAction = { type: 'PASS', playerId: socket.id };
+    // Use stable playerId
+    const playerId = socket.data.playerId || socket.id;
+    const action: GameAction = { type: 'PASS', playerId };
     const success = room.gameEngine.dispatch(action);
 
     if (!success) {
@@ -116,7 +129,7 @@ async function handlePassBid(
         return;
     }
 
-    io.to(roomId).emit('game_state_updated', { roomId, gameState: room.gameEngine.getState() });
+    io.to(roomId).emit('game_state_updated', { roomId, gameState: sanitizeGameState(room.gameEngine.getState()) });
 }
 
 async function handleSetTrump(
@@ -156,5 +169,5 @@ async function handleSetTrump(
         return;
     }
 
-    io.to(roomId).emit('game_state_updated', { roomId, gameState: room.gameEngine.getState() });
+    io.to(roomId).emit('game_state_updated', { roomId, gameState: sanitizeGameState(room.gameEngine.getState()) });
 }

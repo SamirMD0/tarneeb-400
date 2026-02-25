@@ -72,6 +72,7 @@ export interface AppContextValue {
     room: SerializedRoom | null;
     myPlayerId: string | null;
     isLoading: boolean;
+    availableRooms: SerializedRoom[];
     error: RoomState['error'];
   };
 
@@ -153,8 +154,9 @@ export function AppProvider({ children }: AppProviderProps): React.ReactNode {
       joinRoom: roomHook.joinRoom,
       leaveRoom: roomHook.leaveRoom,
       startGame: roomHook.startGame,
+      refreshRoomList: roomHook.refreshRoomList,
     }),
-    [roomHook.createRoom, roomHook.joinRoom, roomHook.leaveRoom, roomHook.startGame]
+    [roomHook.createRoom, roomHook.joinRoom, roomHook.leaveRoom, roomHook.startGame, roomHook.refreshRoomList]
   );
 
   const gameDispatchers: GameDispatchers = useMemo(
@@ -199,6 +201,7 @@ export function AppProvider({ children }: AppProviderProps): React.ReactNode {
         room: roomHook.room,
         myPlayerId: roomHook.myPlayerId,
         isLoading: roomHook.isLoading,
+        availableRooms: roomHook.availableRooms,
         error: roomHook.error,
       },
 
@@ -219,6 +222,7 @@ export function AppProvider({ children }: AppProviderProps): React.ReactNode {
       roomHook.room,
       roomHook.myPlayerId,
       roomHook.isLoading,
+      roomHook.availableRooms,
       roomHook.error,
       gameHook.gameState,
       gameHook.gameOver,

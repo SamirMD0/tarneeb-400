@@ -1,6 +1,9 @@
 // Frontend/hooks/useSocket.ts
-// Manages the socket connection lifecycle only.
-// Does NOT handle room events, game events, or state — those live in domain hooks.
+//
+// @deprecated — Use useConnectionState instead.
+// This hook is superseded by useConnectionState, which provides the same
+// isConnected/connect/disconnect plus latency tracking and reconnect attempt count.
+// Kept only for backward compatibility. Do not use in new code.
 
 'use client';
 
@@ -13,13 +16,16 @@ export interface UseSocketReturn {
   disconnect: () => void;
 }
 
+/**
+ * @deprecated Use `useConnectionState()` from `@/hooks/useConnectionState` instead.
+ * This hook duplicates connection tracking that useConnectionState already provides.
+ * Mounting both hooks simultaneously causes duplicate listeners on connect/disconnect events.
+ */
 export function useSocket(): UseSocketReturn {
   const socket = getSocket();
   const [isConnected, setIsConnected] = useState<boolean>(socket.connected);
 
   useEffect(() => {
-    // Named handlers — required for socket.off() to remove the correct listener.
-    // Anonymous functions passed to socket.on() cannot be removed by socket.off().
     function onConnect() {
       setIsConnected(true);
     }
@@ -36,7 +42,6 @@ export function useSocket(): UseSocketReturn {
     socket.on('disconnect', onDisconnect);
     socket.on('connect_error', onConnectError);
 
-    // Sync with actual socket state in case it connected before this effect ran
     setIsConnected(socket.connected);
 
     return () => {

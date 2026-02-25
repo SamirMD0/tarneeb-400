@@ -1,21 +1,32 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import "@/styles/cards.css";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAppState } from '@/hooks/useAppState';
+import '@/styles/cards.css';
 
-type JoinRoomPayload = { username: string; roomCode: string };
 type FormErrors = { username?: string; roomCode?: string };
 
 export function JoinRoomForm() {
-  const [username, setUsername] = useState("");
-  const [roomCode, setRoomCode] = useState("");
+  const router = useRouter();
+  const { dispatchers, room } = useAppState();
+
+  const [username, setUsername] = useState('');
+  const [roomCode, setRoomCode] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
+  // Navigate to room once roomId is populated by the server response
+  useEffect(() => {
+    if (room.roomId) {
+      router.push(`/room/${room.roomId}`);
+    }
+  }, [room.roomId, router]);
+
   function validate(): FormErrors {
     const next: FormErrors = {};
-    if (!username.trim()) next.username = "Username is required.";
-    if (!roomCode.trim()) next.roomCode = "Room code is required.";
+    if (!username.trim()) next.username = 'Username is required.';
+    if (!roomCode.trim()) next.roomCode = 'Room code is required.';
     return next;
   }
 
@@ -30,11 +41,11 @@ export function JoinRoomForm() {
     setTouched({ username: true, roomCode: true });
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
-    const payload: JoinRoomPayload = {
-      username: username.trim(),
-      roomCode: roomCode.trim(),
-    };
-    console.log("[JoinRoomForm] submit payload:", payload);
+
+    dispatchers.room.joinRoom(
+      roomCode.trim(),
+      username.trim() || undefined,
+    );
   }
 
   const isValid = Object.keys(validate()).length === 0;
@@ -45,12 +56,25 @@ export function JoinRoomForm() {
         <span
           className="text-lg"
           aria-hidden="true"
-          style={{ filter: "drop-shadow(0 0 6px #55aaff)" }}
+          style={{ filter: 'drop-shadow(0 0 6px #55aaff)' }}
         >
           ♦
         </span>
         <h2 className="text-base font-semibold text-slate-50">Join Room</h2>
       </div>
+
+      {room.error && (
+        <div
+          role="alert"
+          className="mb-4 rounded-lg px-3 py-2 text-xs text-red-400"
+          style={{
+            background: 'rgba(255,85,119,0.08)',
+            border: '1px solid rgba(255,85,119,0.25)',
+          }}
+        >
+          {room.error.message}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
@@ -70,14 +94,14 @@ export function JoinRoomForm() {
             aria-invalid={!!(touched.username && errors.username)}
             aria-describedby={
               touched.username && errors.username
-                ? "join-username-error"
+                ? 'join-username-error'
                 : undefined
             }
             onChange={(e) => {
               setUsername(e.target.value);
               if (touched.username) setErrors(validate());
             }}
-            onBlur={() => handleBlur("username")}
+            onBlur={() => handleBlur('username')}
           />
           {touched.username && errors.username && (
             <p
@@ -108,14 +132,14 @@ export function JoinRoomForm() {
             aria-invalid={!!(touched.roomCode && errors.roomCode)}
             aria-describedby={
               touched.roomCode && errors.roomCode
-                ? "join-room-code-error"
+                ? 'join-room-code-error'
                 : undefined
             }
             onChange={(e) => {
               setRoomCode(e.target.value.toUpperCase());
               if (touched.roomCode) setErrors(validate());
             }}
-            onBlur={() => handleBlur("roomCode")}
+            onBlur={() => handleBlur('roomCode')}
           />
           {touched.roomCode && errors.roomCode && (
             <p
@@ -130,10 +154,10 @@ export function JoinRoomForm() {
 
         <button
           type="submit"
-          disabled={!isValid}
+          disabled={!isValid || room.isLoading}
           className="glow-btn glow-btn--secondary mt-1"
         >
-          Join Room
+          {room.isLoading ? 'Joining…' : 'Join Room'}
         </button>
       </form>
     </div>

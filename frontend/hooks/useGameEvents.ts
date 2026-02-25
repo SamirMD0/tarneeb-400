@@ -2,6 +2,11 @@
 // Pure side-effect hook. Registers all Server → Client game event listeners.
 // Feeds into useGameState reducer via dispatch.
 // Must be called once at the game-scoped component tree level.
+//
+// Reconnect re-join is NOT handled here. useRoomEvents owns the reconnect
+// join_room emit exclusively. When the server processes join_room on reconnect,
+// it re-broadcasts game_state_updated, which the onGameStateUpdated listener
+// below receives. This prevents duplicate join_room emits on every reconnect.
 
 'use client';
 
@@ -11,11 +16,12 @@ import type { GameStateAction } from '@/hooks/useGameState';
 
 interface UseGameEventsParams {
   dispatch: React.Dispatch<GameStateAction>;
-  // Needed for reconnect re-sync
+  // Retained for API stability — roomId is no longer used in this hook
+  // since reconnect re-join was moved exclusively to useRoomEvents.
   roomId: string | null;
 }
 
-export function useGameEvents({ dispatch, roomId }: UseGameEventsParams): void {
+export function useGameEvents({ dispatch }: UseGameEventsParams): void {
   const socket = getSocket();
 
   // Stable dispatch reference — prevents re-registering listeners on every render
@@ -58,28 +64,16 @@ export function useGameEvents({ dispatch, roomId }: UseGameEventsParams): void {
       stableDispatch({ type: 'SET_ERROR', error: data });
     }
 
-    // ── Reconnect sync ──────────────────────────────────────────────────────────
-    // On reconnect, re-join the room so the server re-adds this socket to the
-    // Socket.IO room channel and re-broadcasts the current game_state_updated.
-    // Game state is recovered from the server snapshot — no local cache used.
-    function onReconnect() {
-      if (roomId) {
-        socket.emit('join_room', { roomId });
-      }
-    }
-
     socket.on('game_started', onGameStarted);
     socket.on('game_state_updated', onGameStateUpdated);
     socket.on('game_over', onGameOver);
     socket.on('error', onError);
-    socket.on('connect', onReconnect);
 
     return () => {
       socket.off('game_started', onGameStarted);
       socket.off('game_state_updated', onGameStateUpdated);
       socket.off('game_over', onGameOver);
       socket.off('error', onError);
-      socket.off('connect', onReconnect);
     };
-  }, [socket, stableDispatch, roomId]);
+  }, [socket, stableDispatch]); // roomId removed — no longer used in this effect
 }

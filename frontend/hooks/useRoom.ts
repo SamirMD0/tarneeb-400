@@ -12,6 +12,7 @@ import {
   initialRoomState,
   type RoomState,
   type RoomAction,
+  type SerializedRoom,
 } from '../types/room.types';
 import type { RoomConfig } from '../types/room.types';
 
@@ -21,13 +22,18 @@ export interface UseRoomReturn {
   room: RoomState['room'];
   myPlayerId: string | null;
   isLoading: boolean;
+  availableRooms: SerializedRoom[];
   error: RoomState['error'];
+
+  // Refs — stable references for use in unmount effects to avoid stale closures
+  roomIdRef: React.RefObject<string | null>;
 
   // Emitters
   createRoom: (config: RoomConfig, playerName?: string) => void;
   joinRoom: (roomId: string, playerName?: string) => void;
   leaveRoom: () => void;
   startGame: () => void;
+  refreshRoomList: () => void;
 
   // Internal — consumed by useRoomEvents only
   dispatch: React.Dispatch<RoomAction>;
@@ -37,10 +43,13 @@ export function useRoom(): UseRoomReturn {
   const socket = getSocket();
   const [state, dispatch] = useReducer(roomReducer, initialRoomState);
 
-  // Keep a ref to myPlayerId so reconnect logic in useRoomEvents can read it
-  // without creating a stale closure on the dispatch function.
+  // Keep refs to myPlayerId and roomId so reconnect/unmount logic can read
+  // current values without creating stale closures.
   const myPlayerIdRef = useRef<string | null>(null);
   myPlayerIdRef.current = state.myPlayerId;
+
+  const roomIdRef = useRef<string | null>(null);
+  roomIdRef.current = state.roomId;
 
   const createRoom = useCallback(
     (config: RoomConfig, playerName?: string) => {
@@ -67,16 +76,23 @@ export function useRoom(): UseRoomReturn {
     socket.emit('start_game', {});
   }, [socket]);
 
+  const refreshRoomList = useCallback(() => {
+    socket.emit('refresh_room_list', {});
+  }, [socket]);
+
   return {
     roomId: state.roomId,
     room: state.room,
     myPlayerId: state.myPlayerId,
     isLoading: state.isLoading,
+    availableRooms: state.availableRooms,
     error: state.error,
+    roomIdRef,
     createRoom,
     joinRoom,
     leaveRoom,
     startGame,
+    refreshRoomList,
     dispatch,
   };
 }

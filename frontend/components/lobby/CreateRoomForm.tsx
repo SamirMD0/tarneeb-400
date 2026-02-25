@@ -1,26 +1,32 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import "@/styles/cards.css";
-
-type CreateRoomPayload = {
-  username: string;
-  roomName: string;
-  maxPlayers: 2 | 4;
-};
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAppState } from '@/hooks/useAppState';
+import '@/styles/cards.css';
 
 type FormErrors = { username?: string };
 
 export function CreateRoomForm() {
-  const [username, setUsername] = useState("");
-  const [roomName, setRoomName] = useState("");
+  const router = useRouter();
+  const { dispatchers, room } = useAppState();
+
+  const [username, setUsername] = useState('');
+  const [roomName, setRoomName] = useState('');
   const [maxPlayers, setMaxPlayers] = useState<2 | 4>(4);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
+  // Navigate to room once roomId is populated by the server response
+  useEffect(() => {
+    if (room.roomId) {
+      router.push(`/room/${room.roomId}`);
+    }
+  }, [room.roomId, router]);
+
   function validate(): FormErrors {
     const next: FormErrors = {};
-    if (!username.trim()) next.username = "Username is required.";
+    if (!username.trim()) next.username = 'Username is required.';
     return next;
   }
 
@@ -35,12 +41,11 @@ export function CreateRoomForm() {
     setTouched({ username: true });
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
-    const payload: CreateRoomPayload = {
-      username: username.trim(),
-      roomName: roomName.trim(),
-      maxPlayers,
-    };
-    console.log("[CreateRoomForm] submit payload:", payload);
+
+    dispatchers.room.createRoom(
+      { maxPlayers, targetScore: undefined },
+      username.trim() || undefined,
+    );
   }
 
   const isValid = !validate().username;
@@ -51,12 +56,25 @@ export function CreateRoomForm() {
         <span
           className="text-lg"
           aria-hidden="true"
-          style={{ filter: "drop-shadow(0 0 6px #e555c7)" }}
+          style={{ filter: 'drop-shadow(0 0 6px #e555c7)' }}
         >
           ♠
         </span>
         <h2 className="text-base font-semibold text-slate-50">Create Room</h2>
       </div>
+
+      {room.error && (
+        <div
+          role="alert"
+          className="mb-4 rounded-lg px-3 py-2 text-xs text-red-400"
+          style={{
+            background: 'rgba(255,85,119,0.08)',
+            border: '1px solid rgba(255,85,119,0.25)',
+          }}
+        >
+          {room.error.message}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
@@ -76,14 +94,14 @@ export function CreateRoomForm() {
             aria-invalid={!!(touched.username && errors.username)}
             aria-describedby={
               touched.username && errors.username
-                ? "create-username-error"
+                ? 'create-username-error'
                 : undefined
             }
             onChange={(e) => {
               setUsername(e.target.value);
               if (touched.username) setErrors(validate());
             }}
-            onBlur={() => handleBlur("username")}
+            onBlur={() => handleBlur('username')}
           />
           {touched.username && errors.username && (
             <p
@@ -101,7 +119,7 @@ export function CreateRoomForm() {
             htmlFor="create-room-name"
             className="text-xs font-semibold uppercase tracking-wider text-slate-400"
           >
-            Room Name{" "}
+            Room Name{' '}
             <span className="normal-case font-normal text-slate-600">
               (optional)
             </span>
@@ -122,7 +140,7 @@ export function CreateRoomForm() {
             htmlFor="create-max-players"
             className="text-xs font-semibold uppercase tracking-wider text-slate-400"
           >
-            Max Players{" "}
+            Max Players{' '}
             <span className="normal-case font-normal text-slate-600">
               (optional)
             </span>
@@ -140,10 +158,10 @@ export function CreateRoomForm() {
 
         <button
           type="submit"
-          disabled={!isValid}
+          disabled={!isValid || room.isLoading}
           className="glow-btn glow-btn--primary mt-1"
         >
-          Create Room
+          {room.isLoading ? 'Creating…' : 'Create Room'}
         </button>
       </form>
     </div>

@@ -1,21 +1,28 @@
-import "@/styles/cards.css";
+import type { SerializedRoom } from '@/types/room.types';
+import '@/styles/cards.css';
 
 interface RoomHeaderProps {
   roomId: string;
+  room?: SerializedRoom | null;
 }
 
-export function RoomHeader({ roomId }: RoomHeaderProps) {
+export function RoomHeader({ roomId, room }: RoomHeaderProps) {
+  const playerCount = room?.players.length ?? 0;
+  const maxPlayers = room?.config.maxPlayers ?? 4;
+  const hasGame = room?.hasGame ?? false;
+
+  const statusLabel = hasGame ? 'In Progress' : 'Waiting';
+  const statusClass = hasGame ? 'glow-badge--progress' : 'glow-badge--waiting';
+
   return (
     <div className="relative">
-      <div
-        className="glow-panel px-6 py-5 flex items-center justify-between"
-      >
+      <div className="glow-panel px-6 py-5 flex items-center justify-between">
         {/* Top shimmer */}
         <div
           className="absolute top-0 left-6 right-6 h-px"
           style={{
             background:
-              "linear-gradient(90deg, transparent, rgba(229,85,199,0.45), transparent)",
+              'linear-gradient(90deg, transparent, rgba(229,85,199,0.45), transparent)',
           }}
           aria-hidden="true"
         />
@@ -24,7 +31,7 @@ export function RoomHeader({ roomId }: RoomHeaderProps) {
           <span
             aria-hidden="true"
             className="text-xl leading-none"
-            style={{ filter: "drop-shadow(0 0 8px #e555c7)" }}
+            style={{ filter: 'drop-shadow(0 0 8px #e555c7)' }}
           >
             ♠
           </span>
@@ -32,10 +39,10 @@ export function RoomHeader({ roomId }: RoomHeaderProps) {
             <h1
               className="text-lg font-bold tracking-tight"
               style={{
-                background: "linear-gradient(90deg, #e555c7 0%, #55aaff 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
+                background: 'linear-gradient(90deg, #e555c7 0%, #55aaff 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
               }}
             >
               Room
@@ -46,12 +53,15 @@ export function RoomHeader({ roomId }: RoomHeaderProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-500">
+            {playerCount} / {maxPlayers} players
+          </span>
           <span
-            className="glow-badge glow-badge--waiting text-xs"
-            aria-label="Room status: waiting for players"
+            className={`glow-badge ${statusClass} text-xs`}
+            aria-label={`Room status: ${statusLabel}`}
           >
-            Waiting
+            {statusLabel}
           </span>
         </div>
       </div>

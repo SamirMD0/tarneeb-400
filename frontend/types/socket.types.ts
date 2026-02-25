@@ -10,9 +10,10 @@ import type { SerializedRoom, RoomConfig } from './room.types';
 export interface ClientToServerEvents {
   // Room lifecycle — room.handler.ts
   create_room: (data: { config: RoomConfig; playerName?: string }) => void;
-  join_room: (data: { roomId: string; playerName?: string }) => void;
+  join_room: (data: { roomId: string; playerName?: string; playerId?: string }) => void;
   leave_room: (data: Record<string, never>) => void;
   start_game: (data: Record<string, never>) => void;
+  refresh_room_list: (data: Record<string, never>) => void;
 
   // Bidding — bidding.handler.ts
   place_bid: (data: { value: number }) => void;
@@ -26,10 +27,11 @@ export interface ClientToServerEvents {
 // ─── Server → Client ──────────────────────────────────────────────────────────
 
 export interface ServerToClientEvents {
-  // Room events — room.handler.ts
-  room_created: (data: { roomId: string; room: SerializedRoom }) => void;
-  room_joined: (data: { roomId: string; room: SerializedRoom }) => void;
+  // Room events — include myPlayerId so client knows its stable identity
+  room_created: (data: { roomId: string; room: SerializedRoom; myPlayerId: string }) => void;
+  room_joined: (data: { roomId: string; room: SerializedRoom; myPlayerId: string }) => void;
   room_left: (data: { roomId: string }) => void;
+  room_list_updated: (data: { rooms: SerializedRoom[] }) => void;
 
   // Player presence events — room.handler.ts
   player_joined: (data: { playerId: string; playerName: string; room: SerializedRoom }) => void;
@@ -40,7 +42,7 @@ export interface ServerToClientEvents {
   // Game events — all handlers emit game_state_updated after every accepted action
   game_started: (data: { roomId: string; gameState: GameState }) => void;
   game_state_updated: (data: { roomId: string; gameState: GameState }) => void;
-  game_over: (data: { roomId: string; winner: 1 | 2; finalScore: unknown }) => void;
+  game_over: (data: { roomId: string; winner: 1 | 2; finalScore: { team1: number; team2: number } }) => void;
 
   // Error — emitted directly to the acting socket on rejected actions
   error: (data: { code: string; message: string }) => void;

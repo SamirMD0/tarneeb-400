@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import ClientRoot from './ClientRoot';
 import AppShell from '@/components/layout/AppShell';
 import '@/app/globals.css';
 
@@ -19,7 +20,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
       <body suppressHydrationWarning>
-        <AppShell>{children}</AppShell>
+        <ClientRoot>
+          <AppShell>{children}</AppShell>
+        </ClientRoot>
       </body>
     </html>
   );
