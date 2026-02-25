@@ -2,7 +2,6 @@
 // Pure side-effect hook. Registers all Server → Client room event listeners.
 // Feeds updates into the RoomState reducer via the dispatch from useRoom.
 // Must be called once at the top of the room-scoped component tree.
-// Handles reconnect re-sync automatically.
 
 'use client';
 
@@ -12,7 +11,6 @@ import type { RoomAction } from '@/types/room.types';
 
 interface UseRoomEventsParams {
   dispatch: React.Dispatch<RoomAction>;
-  // Passed in so reconnect logic can re-join the correct room
   roomId: string | null;
   myPlayerId: string | null;
 }
@@ -23,19 +21,18 @@ export function useRoomEvents({
   myPlayerId,
 }: UseRoomEventsParams): void {
   const socket = getSocket();
-
-  // Stable dispatch reference — avoids re-registering listeners on every render
   const stableDispatch = useCallback(dispatch, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    // ── Server → Client handlers (named functions for clean socket.off) ────────
+    // SSR / socket not yet available
+    if (!socket) return;
 
     function onRoomCreated(data: Parameters<import('@/types/socket.types').ServerToClientEvents['room_created']>[0]) {
       stableDispatch({
         type: 'ROOM_JOINED',
         roomId: data.roomId,
         room: data.room,
-        myPlayerId: data.myPlayerId,  // ← from server, not socket.id
+        myPlayerId: data.myPlayerId,
       });
     }
 
@@ -44,7 +41,7 @@ export function useRoomEvents({
         type: 'ROOM_JOINED',
         roomId: data.roomId,
         room: data.room,
-        myPlayerId: data.myPlayerId,  // ← from server, not socket.id
+        myPlayerId: data.myPlayerId,
       });
     }
 
@@ -76,21 +73,16 @@ export function useRoomEvents({
       stableDispatch({ type: 'ERROR', error: data });
     }
 
-    // ── Reconnect sync ──────────────────────────────────────────────────────────
-    // When the socket reconnects, if we were in a room, re-emit join_room with
-    // our stable playerId so the server matches us to our existing player entry
-    // instead of treating us as a new player. This is the ONLY recovery mechanism.
     function onReconnect() {
-      if (roomId) {
+      if (roomId && socket) {
         socket.emit('join_room', {
           roomId,
           playerName: undefined,
-          playerId: myPlayerId ?? undefined,  // ← send stable identity for reconnect
+          playerId: myPlayerId ?? undefined,
         });
       }
     }
 
-    // Register all listeners
     socket.on('room_created', onRoomCreated);
     socket.on('room_joined', onRoomJoined);
     socket.on('room_left', onRoomLeft);
@@ -102,7 +94,6 @@ export function useRoomEvents({
     socket.on('error', onError);
     socket.on('connect', onReconnect);
 
-    // Cleanup — removes all listeners by reference to prevent ghost handlers
     return () => {
       socket.off('room_created', onRoomCreated);
       socket.off('room_joined', onRoomJoined);
@@ -115,5 +106,5 @@ export function useRoomEvents({
       socket.off('error', onError);
       socket.off('connect', onReconnect);
     };
-  }, [socket, stableDispatch, roomId, myPlayerId]); // myPlayerId in deps so reconnect always sends current value
+  }, [socket, stableDispatch, roomId, myPlayerId]);
 }

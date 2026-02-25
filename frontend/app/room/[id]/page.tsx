@@ -8,6 +8,9 @@ import { PlayerRoster } from '@/components/room/PlayerRoster';
 import { RoomStatus } from '@/components/room/RoomStatus';
 import { RoomActions } from '@/components/room/RoomActions';
 import { GameBoard } from '@/components/game/GameBoard';
+import { LoadingState } from '@/components/feedback/LoadingState';
+import { ErrorBanner } from '@/components/feedback/ErrorBanner';
+import { RetryPanel } from '@/components/feedback/RetryPanel';
 import '@/styles/cards.css';
 
 export default function RoomPage() {
@@ -24,7 +27,6 @@ export default function RoomPage() {
   }, [connection.isConnected, id]);
 
   // Leave room on unmount (route navigation away)
-  // Uses empty dep array intentionally — leaveRoom is stable (useCallback over socket singleton)
   useEffect(() => {
     return () => {
       dispatchers.room.leaveRoom();
@@ -32,63 +34,50 @@ export default function RoomPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Loading / error states ─────────────────────────────────────────────────
-
+  // ── Not connected ──────────────────────────────────────────────────────────
   if (!connection.isConnected) {
     return (
-      <main className="lobby-bg flex min-h-screen items-center justify-center">
-        <div className="glow-panel px-8 py-10 text-center max-w-sm">
-          <span
-            className="text-3xl"
-            aria-hidden="true"
-            style={{ filter: 'drop-shadow(0 0 10px #e555c7)', opacity: 0.6 }}
-          >
-            ♠
-          </span>
-          <p className="mt-4 text-sm font-semibold text-slate-50">
-            {connection.isConnecting ? 'Connecting…' : 'Disconnected'}
-          </p>
-          <p className="mt-1 text-xs text-slate-500">
-            {connection.reconnectAttempt > 0
-              ? `Reconnect attempt ${connection.reconnectAttempt}…`
-              : 'Waiting for connection.'}
-          </p>
+      <main className="lobby-bg flex min-h-screen items-center justify-center p-4">
+        <div className="w-full max-w-sm">
+          <LoadingState
+            variant={connection.isConnecting ? 'socket-connecting' : 'reconnecting'}
+            label={
+              connection.reconnectAttempt > 0
+                ? `Reconnect attempt ${connection.reconnectAttempt}…`
+                : connection.isConnecting
+                  ? 'Connecting…'
+                  : 'Disconnected from server'
+            }
+          />
         </div>
       </main>
     );
   }
 
+  // ── Room join error ────────────────────────────────────────────────────────
   if (room.error) {
     return (
-      <main className="lobby-bg flex min-h-screen items-center justify-center">
-        <div className="glow-panel px-8 py-10 text-center max-w-sm">
-          <p className="text-sm font-semibold text-red-400">{room.error.message}</p>
-          <button
-            type="button"
-            className="glow-btn glow-btn--secondary mt-6"
-            onClick={() => router.push('/lobby')}
-          >
-            Back to Lobby
-          </button>
+      <main className="lobby-bg flex min-h-screen items-center justify-center p-4">
+        <div className="w-full max-w-sm">
+          <RetryPanel
+            title="Couldn't join room"
+            description={room.error.message}
+            retryLabel="Try Again"
+            onRetry={() => dispatchers.room.joinRoom(id)}
+            secondaryLabel="Back to Lobby"
+            onSecondary={() => router.push('/lobby')}
+          />
         </div>
       </main>
     );
   }
 
+  // ── Joining / hydrating ────────────────────────────────────────────────────
   if (room.isLoading || !room.room) {
     return (
-      <main className="lobby-bg flex min-h-screen items-center justify-center">
-        <div className="glow-panel px-8 py-10 text-center max-w-sm">
-          <span
-            className="text-3xl"
-            aria-hidden="true"
-            style={{ filter: 'drop-shadow(0 0 10px #e555c7)', opacity: 0.6 }}
-          >
-            ♠
-          </span>
-          <p className="mt-4 text-sm font-semibold text-slate-50">
-            Joining room…
-          </p>
+      <main className="lobby-bg flex min-h-screen items-center justify-center p-4">
+        <div className="w-full max-w-sm">
+          <LoadingState variant="room-hydrating" />
         </div>
       </main>
     );
@@ -99,13 +88,24 @@ export default function RoomPage() {
   return (
     <main className="lobby-bg min-h-screen px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl flex flex-col gap-6">
+
+        {/* Mid-session reconnect warning — inline, non-blocking */}
+        {!connection.isConnected && (
+          <ErrorBanner
+            category="transport"
+            message={
+              connection.reconnectAttempt > 0
+                ? `Reconnecting… (attempt ${connection.reconnectAttempt})`
+                : 'Connection lost. Reconnecting…'
+            }
+          />
+        )}
+
         <RoomHeader roomId={id} room={room.room} />
 
         {gameIsActive ? (
-          // ── Active game — show full board ───────────────────────────────────
           <GameBoard />
         ) : (
-          // ── Waiting room — show roster + actions ────────────────────────────
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2 flex flex-col gap-6">
               <RoomStatus room={room.room} derived={game.derived} />

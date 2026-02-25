@@ -7,9 +7,10 @@ import { HandCards } from './HandCards';
 import { TrickArea, type TrickCard } from './TrickArea';
 import { BiddingPanel } from './BiddingPanel';
 import { TrumpSelector } from './TrumpSelector';
+import { ErrorBanner } from '@/components/feedback/ErrorBanner';
+import { LoadingState } from '@/components/feedback/LoadingState';
 import type { Card, Suit } from '@/types/game.types';
 
-// ─── Suit symbol mapping ───────────────────────────────────────────────────────
 const SUIT_SYMBOLS: Record<Suit, '♠' | '♥' | '♦' | '♣'> = {
   SPADES:   '♠',
   HEARTS:   '♥',
@@ -21,21 +22,16 @@ export function GameBoard() {
   const { game, room, dispatchers } = useAppState();
   const { derived } = game;
 
-  // ── Loading guard ────────────────────────────────────────────────────────────
+  // ── Loading guard ──────────────────────────────────────────────────────────
   if (!derived.phase) {
-    return (
-      <div className="glow-panel flex items-center justify-center p-12 text-center">
-        <p className="text-sm text-slate-500">Waiting for game to start…</p>
-      </div>
-    );
+    return <LoadingState variant="game-hydrating" />;
   }
 
-  // ── Build PlayerSeat data from live room + game state ────────────────────────
-  // Seat order: [top, right, bottom(me), left]  — bottom is always the local player.
+  // ── Build PlayerSeat data ──────────────────────────────────────────────────
+  // Seat order: [top, right, bottom(me), left] — bottom is always the local player.
   const players = game.gameState?.players ?? [];
   const myIndex = players.findIndex((p) => p.id === room.myPlayerId);
 
-  // Rotate so local player is always at index 2 (bottom)
   const rotated =
     myIndex >= 0
       ? [
@@ -63,7 +59,7 @@ export function GameBoard() {
 
   const [top, right, bottom, left] = seats;
 
-  // ── Build trick cards ────────────────────────────────────────────────────────
+  // ── Trick cards ────────────────────────────────────────────────────────────
   const trickCards: (TrickCard | null)[] = Array.from({ length: 4 }, (_, i) => {
     const card = derived.currentTrick[i];
     if (!card) return null;
@@ -75,7 +71,7 @@ export function GameBoard() {
     };
   });
 
-  // ── Build hand cards ─────────────────────────────────────────────────────────
+  // ── Hand cards ─────────────────────────────────────────────────────────────
   const handCards = derived.myHand.map((card: Card, i: number) => ({
     id: `hand-${card.suit}-${card.rank}-${i}`,
     rank: card.rank,
@@ -87,7 +83,6 @@ export function GameBoard() {
   const isBidding = phase === 'BIDDING' && !derived.mustSelectTrump;
   const isTrumpSelection = phase === 'BIDDING' && derived.mustSelectTrump;
 
-  // ── Current bid info ─────────────────────────────────────────────────────────
   const currentBid = game.gameState?.highestBid ?? null;
   const currentBidder =
     game.gameState?.bidderId != null
@@ -96,21 +91,17 @@ export function GameBoard() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Error banner */}
+
+      {/* Game action error banner — transient, shown above the board */}
       {game.lastError && (
-        <div
-          role="alert"
-          className="rounded-lg px-4 py-2 text-xs text-red-400"
-          style={{
-            background: 'rgba(255,85,119,0.08)',
-            border: '1px solid rgba(255,85,119,0.25)',
-          }}
-        >
-          {game.lastError.message}
-        </div>
+        <ErrorBanner
+          category="game"
+          message={game.lastError.message}
+          code={game.lastError.code}
+        />
       )}
 
-      {/* Table layout */}
+      {/* Table */}
       <div className="glow-panel p-4 relative overflow-visible">
         <div
           className="absolute top-0 left-6 right-6 h-px"
@@ -175,7 +166,6 @@ export function GameBoard() {
   );
 }
 
-// Small placeholder for unfilled seats
 function EmptySeat({ index }: { index: number }) {
   const data: PlayerSeatData = {
     id: `empty-${index}`,

@@ -1,8 +1,6 @@
 // Frontend/hooks/useSocket.ts
 //
 // @deprecated — Use useConnectionState instead.
-// This hook is superseded by useConnectionState, which provides the same
-// isConnected/connect/disconnect plus latency tracking and reconnect attempt count.
 // Kept only for backward compatibility. Do not use in new code.
 
 'use client';
@@ -18,25 +16,17 @@ export interface UseSocketReturn {
 
 /**
  * @deprecated Use `useConnectionState()` from `@/hooks/useConnectionState` instead.
- * This hook duplicates connection tracking that useConnectionState already provides.
- * Mounting both hooks simultaneously causes duplicate listeners on connect/disconnect events.
  */
 export function useSocket(): UseSocketReturn {
   const socket = getSocket();
-  const [isConnected, setIsConnected] = useState<boolean>(socket.connected);
+  const [isConnected, setIsConnected] = useState<boolean>(socket?.connected ?? false);
 
   useEffect(() => {
-    function onConnect() {
-      setIsConnected(true);
-    }
+    if (!socket) return;
 
-    function onDisconnect() {
-      setIsConnected(false);
-    }
-
-    function onConnectError() {
-      setIsConnected(false);
-    }
+    function onConnect() { setIsConnected(true); }
+    function onDisconnect() { setIsConnected(false); }
+    function onConnectError() { setIsConnected(false); }
 
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
@@ -52,15 +42,11 @@ export function useSocket(): UseSocketReturn {
   }, [socket]);
 
   const connect = useCallback(() => {
-    if (!socket.connected) {
-      socket.connect();
-    }
+    if (socket && !socket.connected) socket.connect();
   }, [socket]);
 
   const disconnect = useCallback(() => {
-    if (socket.connected) {
-      socket.disconnect();
-    }
+    if (socket?.connected) socket.disconnect();
   }, [socket]);
 
   return { isConnected, connect, disconnect };

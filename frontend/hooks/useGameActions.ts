@@ -31,31 +31,26 @@ export function useGameActions({
 
   const placeBid = useCallback(
     (value: number) => {
-      // Guard: only emit if it's this player's turn and we're in BIDDING phase
+      if (!socket) return;
       if (!derived.isMyTurn || derived.phase !== 'BIDDING') return;
-
       dispatch({ type: 'CLEAR_ERROR' });
-      // Payload verified against bidding.handler.ts: { value: number }
       socket.emit('place_bid', { value });
     },
     [socket, dispatch, derived.isMyTurn, derived.phase]
   );
 
   const passBid = useCallback(() => {
+    if (!socket) return;
     if (!derived.isMyTurn || derived.phase !== 'BIDDING') return;
-
     dispatch({ type: 'CLEAR_ERROR' });
-    // Payload verified against bidding.handler.ts: {}
     socket.emit('pass_bid', {});
   }, [socket, dispatch, derived.isMyTurn, derived.phase]);
 
   const selectTrump = useCallback(
     (suit: Suit) => {
-      // Guard: only the bid winner can select trump, during BIDDING, before trump is set
+      if (!socket) return;
       if (!derived.mustSelectTrump) return;
-
       dispatch({ type: 'CLEAR_ERROR' });
-      // Payload verified against bidding.handler.ts: { suit: string }
       socket.emit('set_trump', { suit });
     },
     [socket, dispatch, derived.mustSelectTrump]
@@ -63,10 +58,9 @@ export function useGameActions({
 
   const playCard = useCallback(
     (card: Card) => {
+      if (!socket) return;
       if (!derived.isMyTurn || derived.phase !== 'PLAYING') return;
-
       dispatch({ type: 'CLEAR_ERROR' });
-      // Payload verified against playing.handler.ts: { card: { suit: string; rank: string } }
       socket.emit('play_card', { card: { suit: card.suit, rank: card.rank } });
     },
     [socket, dispatch, derived.isMyTurn, derived.phase]

@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppState } from '@/hooks/useAppState';
+import { EmptyState } from '@/components/feedback/EmptyState';
 import '@/styles/cards.css';
 
 const SUIT_ICONS = ['♠', '♥', '♦', '♣'] as const;
@@ -19,8 +20,6 @@ export function RoomList() {
   }, [room.roomId, router]);
 
   // Derive visible rooms from the live room snapshot.
-  // When not in a room the list is populated by a future lobby listing endpoint.
-  // For now we show the current room if one exists, otherwise an empty list.
   // TODO: wire to a REST GET /rooms endpoint when the backend exposes it.
   const rooms = room.room
     ? [
@@ -53,21 +52,16 @@ export function RoomList() {
       </div>
 
       {rooms.length === 0 ? (
-        <div className="glow-panel flex flex-col items-center justify-center px-6 py-14 text-center">
-          <span
-            className="text-4xl"
-            aria-hidden="true"
-            style={{ filter: 'drop-shadow(0 0 10px #e555c7)', opacity: 0.4 }}
-          >
-            ♠
-          </span>
-          <p className="mt-4 text-sm font-semibold text-slate-50">
-            No rooms available
-          </p>
-          <p className="mt-1 text-xs text-slate-500">
-            Be the first to create a room and invite others.
-          </p>
-        </div>
+        <EmptyState
+          title="No rooms available"
+          description="Be the first to create a room and invite others."
+          suit="♠"
+          actionLabel="Create a Room"
+          onAction={() => {
+            // Scroll to the create form — it lives in the same page column
+            document.getElementById('create-username')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        />
       ) : (
         <ul className="flex flex-col gap-3" role="list">
           {rooms.map((r, i) => (

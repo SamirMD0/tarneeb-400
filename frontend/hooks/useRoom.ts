@@ -17,25 +17,18 @@ import {
 import type { RoomConfig } from '../types/room.types';
 
 export interface UseRoomReturn {
-  // State
   roomId: string | null;
   room: RoomState['room'];
   myPlayerId: string | null;
   isLoading: boolean;
   availableRooms: SerializedRoom[];
   error: RoomState['error'];
-
-  // Refs — stable references for use in unmount effects to avoid stale closures
   roomIdRef: React.RefObject<string | null>;
-
-  // Emitters
   createRoom: (config: RoomConfig, playerName?: string) => void;
   joinRoom: (roomId: string, playerName?: string) => void;
   leaveRoom: () => void;
   startGame: () => void;
   refreshRoomList: () => void;
-
-  // Internal — consumed by useRoomEvents only
   dispatch: React.Dispatch<RoomAction>;
 }
 
@@ -43,8 +36,6 @@ export function useRoom(): UseRoomReturn {
   const socket = getSocket();
   const [state, dispatch] = useReducer(roomReducer, initialRoomState);
 
-  // Keep refs to myPlayerId and roomId so reconnect/unmount logic can read
-  // current values without creating stale closures.
   const myPlayerIdRef = useRef<string | null>(null);
   myPlayerIdRef.current = state.myPlayerId;
 
@@ -53,6 +44,7 @@ export function useRoom(): UseRoomReturn {
 
   const createRoom = useCallback(
     (config: RoomConfig, playerName?: string) => {
+      if (!socket) return;
       dispatch({ type: 'LOADING' });
       socket.emit('create_room', { config, playerName });
     },
@@ -61,6 +53,7 @@ export function useRoom(): UseRoomReturn {
 
   const joinRoom = useCallback(
     (roomId: string, playerName?: string) => {
+      if (!socket) return;
       dispatch({ type: 'LOADING' });
       socket.emit('join_room', { roomId, playerName });
     },
@@ -68,15 +61,17 @@ export function useRoom(): UseRoomReturn {
   );
 
   const leaveRoom = useCallback(() => {
+    if (!socket) return;
     socket.emit('leave_room', {});
-    // State is cleared only after room_left is received from the server.
   }, [socket]);
 
   const startGame = useCallback(() => {
+    if (!socket) return;
     socket.emit('start_game', {});
   }, [socket]);
 
   const refreshRoomList = useCallback(() => {
+    if (!socket) return;
     socket.emit('refresh_room_list', {});
   }, [socket]);
 
