@@ -26,7 +26,7 @@ const envSchema = z.object({
     REDIS_URL: z.string().url(),
 
     // CORS
-    CORS_ORIGIN: z.string().optional().default('*'),
+    CORS_ORIGIN: z.string().min(1, 'CORS_ORIGIN is required'),
 
     // Rate Limiting
     RATE_LIMIT_WINDOW_MS: z.coerce.number().optional().default(900000), // 15 min
@@ -34,6 +34,8 @@ const envSchema = z.object({
     ROOM_CREATION_LIMIT: z.coerce.number().optional().default(3),
 
     // Security
+    JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+    JWT_EXPIRES_IN: z.string().optional().default('7d'),
     ENABLE_STRICT_VALIDATION: z
         .string()
         .optional()
@@ -73,6 +75,22 @@ export function validateEnv(): Env {
     }
 
     validatedEnv = result.data;
+
+    // Enforce strong JWT secret in all environments
+    const weakDefaults = new Set(['change_me_in_production', 'changeme', 'default', 'secret']);
+    if (!validatedEnv.JWT_SECRET || weakDefaults.has(validatedEnv.JWT_SECRET)) {
+        throw new Error('JWT_SECRET is missing or too weak. Set a strong secret (>=32 chars).');
+    }
+
+    // Production hardening for stack traces
+    if (validatedEnv.NODE_ENV === 'production' && validatedEnv.EXPOSE_STACK_TRACES) {
+        throw new Error('EXPOSE_STACK_TRACES must be false in production');
+    }
+
+    // Production hardening for CORS
+    if (validatedEnv.NODE_ENV === 'production' && validatedEnv.CORS_ORIGIN.includes('*')) {
+        throw new Error('CORS_ORIGIN cannot contain wildcards (*) in production');
+    }
 
     // Override for tests
     if (validatedEnv.NODE_ENV === 'test') {

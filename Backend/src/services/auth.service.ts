@@ -5,9 +5,9 @@
 import jwt from 'jsonwebtoken';
 import { UserModel as User } from '../models/User.model.js';
 import type { RegisterRequest, LoginRequest, AuthResponse, JwtPayload } from '../types/auth.types.js';
+import { getEnv } from '../lib/env.js';
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'change_me_in_production';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '7d';
+const { JWT_SECRET, JWT_EXPIRES_IN } = getEnv();
 
 function signToken(userId: string, email: string): string {
   const payload: JwtPayload = { userId, email };

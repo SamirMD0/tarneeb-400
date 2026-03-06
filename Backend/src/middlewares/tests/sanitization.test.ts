@@ -226,8 +226,10 @@ suite('preventHPP', () => {
         );
 
         assert.equal((mockRequest.query as any).page, '1');
+        // filter is NOT whitelisted — deduplicated to first value
         assert.equal((mockRequest.query as any).filter, 'a');
-        assert.equal((mockRequest.query as any).sort, 'name');
+        // sort IS whitelisted — stays as array
+        assert.deepEqual((mockRequest.query as any).sort, ['name']);
     });
 
     test('should call next after processing', () => {

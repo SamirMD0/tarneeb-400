@@ -146,6 +146,16 @@ async function handleGameAction(
             return;
         }
 
+        // Enforce JWT-derived identity: never trust client-supplied playerId
+        const verifiedId = socket.data.playerId || socket.data.userId;
+        if (!verifiedId) {
+            emitError(socket, 'AUTH_REQUIRED', 'Authentication required');
+            return;
+        }
+        if (Object.prototype.hasOwnProperty.call(action as object, 'playerId')) {
+            (action as any).playerId = verifiedId;
+        }
+
         // Dispatch action to game engine
         const success = room.gameEngine.dispatch(action);
 

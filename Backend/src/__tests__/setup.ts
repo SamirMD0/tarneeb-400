@@ -15,9 +15,10 @@ process.env.NODE_ENV = 'test';
 process.env.PORT = '0';
 process.env.MONGO_URI = 'mongodb://localhost:27017/tarneeb_test';
 process.env.REDIS_URL = 'redis://localhost:6379/1';
-process.env.CORS_ORIGIN = '*';
+process.env.CORS_ORIGIN = 'http://localhost:3000';
 process.env.LOG_ERRORS = 'false';
 process.env.EXPOSE_STACK_TRACES = 'true';
+process.env.JWT_SECRET = 'test-secret-key-minimum-32-characters-required-here';
 
 // ──────────────────────────────────────────
 // 2. Module-level mocks (mongoose & redis)

@@ -104,6 +104,10 @@ async function handleCreateRoom(socket: SocketType, data: any, io: Server<Client
     const room = await roomManager.createRoom(config);
 
     const playerId = resolvePlayerId(socket);
+    if (!playerId) {
+        socket.emit('error', { code: 'AUTH_REQUIRED', message: 'Authentication required' });
+        return;
+    }
     const playerName = data?.playerName || `Player_${playerId.substring(0, 6)}`;
     await room.addPlayer(playerId, playerName);
 
@@ -148,7 +152,7 @@ async function handleJoinRoom(
 
     // ── Reconnect path: player already exists in room ──────────────────────
     // Client sends playerId on reconnect. Check if that player is in the room.
-    const reconnectId = requestedPlayerId || resolvePlayerId(socket);
+    const reconnectId = resolvePlayerId(socket);
     const existingPlayer = room.players.get(reconnectId);
 
     if (existingPlayer) {
@@ -193,6 +197,10 @@ async function handleJoinRoom(
     }
 
     const playerId = resolvePlayerId(socket);
+    if (!playerId) {
+        socket.emit('error', { code: 'AUTH_REQUIRED', message: 'Authentication required' });
+        return;
+    }
     const name = playerName || `Player_${playerId.substring(0, 6)}`;
     const added = await room.addPlayer(playerId, name);
 

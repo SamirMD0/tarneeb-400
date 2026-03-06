@@ -75,8 +75,7 @@ export async function connectMongo(): Promise<typeof mongoose> {
             );
 
             if (connectionAttempts >= MAX_RETRY_ATTEMPTS) {
-                console.error('Max MongoDB connection attempts reached. Exiting.');
-                process.exit(1);
+                throw new Error(`MongoDB: max retry attempts (${MAX_RETRY_ATTEMPTS}) exceeded`);
             }
 
             const delay = getRetryDelay(connectionAttempts);
@@ -95,17 +94,7 @@ export async function disconnectMongo(): Promise<void> {
     console.log('MongoDB disconnected');
 }
 
-// Graceful shutdown handler
-export function setupGracefulShutdown(): void {
-    const shutdown = async (signal: string) => {
-        console.log(`${signal} received. Closing MongoDB connection...`);
-        await disconnectMongo();
-        process.exit(0);
-    };
-
-    process.on('SIGINT', () => shutdown('SIGINT'));
-    process.on('SIGTERM', () => shutdown('SIGTERM'));
-}
+// Graceful shutdown is orchestrated centrally in index.ts.
 
 export async function pingMongo(): Promise<boolean> {
     try {

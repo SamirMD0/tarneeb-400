@@ -14,7 +14,7 @@ function getSocketUrl(): string {
   // crash. The real backend URL must be set in frontend/.env.local.
   return (
     process.env.NEXT_PUBLIC_SOCKET_URL ||
-    (typeof window !== 'undefined' ? 'http://localhost:3001' : '')
+    (typeof window !== 'undefined' ? 'http://localhost:5000' : '')
   );
 }
 

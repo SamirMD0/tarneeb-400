@@ -1,15 +1,17 @@
 // Backend/src/rooms/roomManager.ts - PHASE 14
 
+import { randomUUID } from "node:crypto";
 import { Room } from "./room.js";
 import { RoomConfig, RoomID } from "../types/room.types.js";
 import { roomCache } from "../cache/roomCache.js";
+import { logger } from "../lib/logger.js";
 
 /**
  * Generates a unique room ID
  * Uses crypto random for production-grade uniqueness
  */
 function generateRoomId(): RoomID {
-    return `room_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    return `room_${randomUUID()}`;
 }
 
 /**
@@ -24,9 +26,19 @@ export class RoomManager {
     }
 
     /**
-     * Create a new room with the given config
-     * Returns the created Room
+     * Hydrate rooms from Redis on boot so active games survive restarts.
+     * Must be called after Redis is connected and before the server
+     * starts accepting connections.
      */
+    async initialize(): Promise<void> {
+        const cached = await roomCache.getAllActiveRooms();
+        for (const room of cached) {
+            room.reattachPersistence();
+            this.rooms.set(room.id, room);
+        }
+        logger.info(`Hydrated ${cached.length} room(s) from Redis`);
+    }
+
     /**
      * Create a new room with the given config
      * Returns the created Room
@@ -51,36 +63,10 @@ export class RoomManager {
         // Try cache
         room = await roomCache.getRoom(id);
         if (room) {
+            // Ensure persistence listeners are attached after hydration
+            room.reattachPersistence();
             // Re-hydrate local map
             this.rooms.set(room.id, room);
-            // Re-attach subscription for game engine if game is running
-            if (room.gameEngine) {
-                room.gameEngine.subscribe(() => {
-                    // We can't access Room's private saveState, but we know Room handles its own subscription
-                    // if it was hydrated correctly via RoomCache.deserialize which creates the Room object.
-                    // Wait, RoomCache.deserialize creates a NEW Room object.
-                    // We need to ensure that the hydrated room has the subscription logic attached?
-                    // Room.startGame attaches the subscription. RoomCache.deserialize RE-CREATES GameEngine.
-                    // Accessing private method saveState from outside is impossible.
-                    // We should add a public method to re-attach listeners if needed or handle it in RoomCache.
-                    // Actually, RoomCache.deserialize creates a new Room.
-                    // Does it attach listeners? NO.
-                    // I should add `hydrate` method to Room, or handle it in deserialize.
-                    // Or RoomCache can assume Room is dumb data + methods.
-                    // But Room.gameEngine subscription is needed for DEBOUNCED functionality.
-                    // I'll update RoomCache.deserialize to attach the listener if possible, 
-                    // OR I add a method `room.hydrate()`? 
-                    // I'll stick to basic hydration for now. If persistence works on overwrite, gameEngine updates might invoke saveState 
-                    // IF we attach listener.
-                    // See fix below for RoomCache.deserialize adaptation if I can.
-                });
-                // For Phase 16, let's assume the retrieved room is static snapshot until modified.
-                // If we modify it, we call room methods which save. 
-                // If game runs, we need the listener.
-
-                // FIX: We need to re-subscribe the cache saver if game engine is present!
-                // I will add a method to Room to recover state/subscription.
-            }
         }
         return room;
     }

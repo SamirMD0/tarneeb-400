@@ -1,6 +1,7 @@
 // Backend/src/socket/socketMiddleware.ts - Phase 17: WebSocket Middleware
 
 import { Socket } from 'socket.io';
+import jwt from 'jsonwebtoken';
 import type {
     ClientToServerEvents,
     ServerToClientEvents,
@@ -8,6 +9,8 @@ import type {
 } from '../types/socket.types.js';
 import { logger } from '../lib/logger.js';
 import { metrics } from '../lib/metrics.js';
+import { getEnv } from '../lib/env.js';
+import type { JwtPayload } from '../types/auth.types.js';
 
 type SocketType = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
 type EventHandler = (socket: SocketType, ...args: any[]) => Promise<void> | void;
@@ -36,24 +39,34 @@ setInterval(() => {
 }, RATE_LIMIT_CLEANUP_INTERVAL);
 
 /**
- * Authentication middleware (placeholder)
- * TODO: Implement actual authentication in future phases
+ * Authentication middleware
+ * - Expects a JWT in socket.handshake.auth.token
+ * - Verifies the token and extracts userId into socket.data.userId
+ * - Rejects connection if token is missing or invalid
  */
 export function authMiddleware(socket: SocketType, next: (err?: Error) => void): void {
-    // Placeholder: Accept all connections for now
-    // In production, verify JWT token or session here
+    const token = socket.handshake.auth?.token as string | undefined;
 
-    const token = socket.handshake.auth.token;
-
-    if (process.env.NODE_ENV === 'production' && !token) {
-        // For now, just log a warning
-        logger.warn(`[Auth] Socket ${socket.id} connected without token`, { socketId: socket.id });
+    if (!token) {
+        next(Object.assign(new Error('AUTH_REQUIRED'), { code: 'AUTH_REQUIRED' }));
+        return;
     }
 
-    // Store user info in socket data if authenticated
-    socket.data.userId = socket.handshake.auth.userId || socket.id;
+    try {
+        const { JWT_SECRET } = getEnv();
+        const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
+        if (!payload || !payload.userId) {
+            next(Object.assign(new Error('INVALID_TOKEN'), { code: 'INVALID_TOKEN' }));
+            return;
+        }
 
-    next();
+        // Derive identity exclusively from verified JWT
+        socket.data.userId = payload.userId;
+        next();
+    } catch (err) {
+        logger.warn('[Auth] JWT verification failed', { socketId: socket.id, error: err instanceof Error ? err.message : String(err) });
+        next(Object.assign(new Error('INVALID_TOKEN'), { code: 'INVALID_TOKEN' }));
+    }
 }
 
 /**

@@ -164,7 +164,7 @@ describe('Persistence – MongoDB Models', { timeout: 30_000 }, () => {
             upsertOpts
         );
 
-        const user = await UserModel.findOne({ socketId: 'socket_1' }).lean().exec();
+        const user = await UserModel.findOne({ socketId: 'socket_1' }).lean().exec() as any;
         assert.ok(user);
         assert.equal(user!.gamesPlayed, 2);
         assert.equal(user!.wins, 1);

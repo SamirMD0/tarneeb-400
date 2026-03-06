@@ -4,6 +4,7 @@ import { Room } from '../rooms/room.js';
 import { GameEngine } from '../game/engine.js';
 import { redis } from '../lib/redis.js';
 import type { RoomID } from '../types/room.types.js';
+import { logger } from '../lib/logger.js';
 
 const KEY_PREFIX = 'room:';
 const TTL_WAITING = 60 * 60; // 1 hour
@@ -26,7 +27,7 @@ export const roomCache = {
             };
             return JSON.stringify(data);
         } catch (error) {
-            console.error(`Failed to serialize room ${room.id}:`, error);
+            logger.error('Failed to serialize room', { roomId: room.id, error });
             throw error;
         }
     },
@@ -40,20 +41,27 @@ export const roomCache = {
             const room = new Room(data.id, data.config);
 
             if (Array.isArray(data.players)) {
-                data.players.forEach(([id, player]: [string, unknown]) => {
-                    room.players.set(id, player as { id: string; name: string; isConnected: boolean });
+                data.players.forEach(([id, player]: [string, { id: string; name: string; isConnected: boolean }]) => {
+                    room.players.set(id, player);
                 });
             }
 
             if (data.gameState && data.hasGame) {
                 const playerIds = data.gameState.players.map((p: { id: string }) => p.id);
-                room.gameEngine = new GameEngine(playerIds, data.id);
-                (room.gameEngine as unknown as { state: unknown }).state = data.gameState;
+                try {
+                    room.gameEngine = GameEngine.fromState(data.gameState, playerIds, data.id);
+                } catch (err) {
+                    logger.error('Failed to hydrate GameEngine from state', { roomId: data.id, error: err });
+                    return null;
+                }
             }
+
+            // Reattach persistence if a game engine exists
+            room.reattachPersistence?.();
 
             return room;
         } catch (error) {
-            console.error('Failed to deserialize room:', error);
+            logger.error('Failed to deserialize room', { error });
             return null;
         }
     },
@@ -73,7 +81,7 @@ export const roomCache = {
         try {
             await client.set(key, serialized, { EX: ttl });
         } catch (error) {
-            console.error(`Failed to cache room ${room.id}:`, error);
+            logger.error('Failed to cache room', { roomId: room.id, error });
         }
     },
 
@@ -88,7 +96,7 @@ export const roomCache = {
             const room = roomCache.deserialize(json);
             return room || undefined;
         } catch (error) {
-            console.error(`Failed to get room ${id} from cache:`, error);
+            logger.error('Failed to get room from cache', { roomId: id, error });
             return undefined;
         }
     },
@@ -100,7 +108,7 @@ export const roomCache = {
         try {
             await client.del(`${KEY_PREFIX}${id}`);
         } catch (error) {
-            console.error(`Failed to delete room ${id} from cache:`, error);
+            logger.error('Failed to delete room from cache', { roomId: id, error });
         }
     },
 
@@ -132,7 +140,7 @@ export const roomCache = {
                 }
             } while (cursor !== 0);
         } catch (error) {
-            console.error('Failed to scan active rooms:', error);
+            logger.error('Failed to scan active rooms', { error });
         }
 
         return rooms;

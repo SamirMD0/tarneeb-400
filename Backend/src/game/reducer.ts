@@ -27,108 +27,128 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     return state; // Reject invalid action, return unchanged state
   }
 
-  // Clone shallow state (engine-level immutability)
-  const next: GameState = structuredClone(state);
-
   switch (action.type) {
     // -------------------------------
     // BIDDING
     // -------------------------------
     case "START_BIDDING": {
-      if (next.phase !== "DEALING") return state;
-      next.phase = "BIDDING";
-      next.currentPlayerIndex = 0;
-      return next;
+      if (state.phase !== "DEALING") return state;
+      // Only primitives change — shallow spread is sufficient
+      return { ...state, phase: "BIDDING" as const, currentPlayerIndex: 0 };
     }
 
     case "BID": {
-      if (next.phase !== "BIDDING") return state;
+      if (state.phase !== "BIDDING") return state;
 
-      const player = next.players.find((p) => p.id === action.playerId);
+      const player = state.players.find((p) => p.id === action.playerId);
       if (!player) return state;
-      const teamScore = next.teams[player.teamId].score;
+      const teamScore = state.teams[player.teamId].score;
 
-      if (!isBidValid(action.value, teamScore, next.highestBid)) return state;
+      if (!isBidValid(action.value, teamScore, state.highestBid)) return state;
 
-      next.highestBid = action.value;
-      next.bidderId = action.playerId;
-      next.currentPlayerIndex = (next.currentPlayerIndex + 1) % 4;
-      return next;
+      // Only primitives change — no array/object mutations needed
+      return {
+        ...state,
+        highestBid: action.value,
+        bidderId: action.playerId,
+        currentPlayerIndex: (state.currentPlayerIndex + 1) % 4,
+      };
     }
 
     case "PASS": {
-      if (next.phase !== "BIDDING") return state;
-      next.currentPlayerIndex = (next.currentPlayerIndex + 1) % 4;
-      return next;
+      if (state.phase !== "BIDDING") return state;
+      return { ...state, currentPlayerIndex: (state.currentPlayerIndex + 1) % 4 };
     }
 
     case "SET_TRUMP": {
-      if (next.phase !== "BIDDING") return state;
-      if (!next.bidderId) return state;
+      if (state.phase !== "BIDDING") return state;
+      if (!state.bidderId) return state;
 
       // Phase 13: Validate suit is valid
       if (!isValidSuit(action.suit)) return state;
 
-      next.trumpSuit = action.suit;
-      next.phase = "PLAYING";
-      next.currentPlayerIndex = getPlayerIndex(next, next.bidderId);
-      return next;
+      return {
+        ...state,
+        trumpSuit: action.suit,
+        phase: "PLAYING" as const,
+        currentPlayerIndex: getPlayerIndex(state, state.bidderId),
+      };
     }
 
     // -------------------------------
     // PLAYING
     // -------------------------------
     case "PLAY_CARD": {
-      if (next.phase !== "PLAYING") return state;
+      if (state.phase !== "PLAYING") return state;
 
       // Phase 13: Reject if trick already complete
-      if (next.trick.length >= 4) return state;
+      if (state.trick.length >= 4) return state;
 
-      const player = next.players.find((p) => p.id === action.playerId);
-      if (!player) return state;
+      const playerIdx = state.players.findIndex((p) => p.id === action.playerId);
+      if (playerIdx === -1) return state;
 
-      if (!canPlayCard(next, action.playerId, action.card)) return state;
+      if (!canPlayCard(state, action.playerId, action.card)) return state;
 
-      // Remove card from hand
-      player.hand = player.hand.filter(
-        (c) => !(c.suit === action.card.suit && c.rank === action.card.rank),
-      );
+      // Clone only the players array, and only the affected player's hand
+      const newPlayers = state.players.map((p, i) => {
+        if (i !== playerIdx) return p; // share reference for untouched players
+        return {
+          ...p,
+          hand: p.hand.filter(
+            (c) => !(c.suit === action.card.suit && c.rank === action.card.rank),
+          ),
+        };
+      });
 
-      // ADD THESE LINES: Track who started the trick
-      if (next.trick.length === 0) {
-        next.trickStartPlayerIndex = next.currentPlayerIndex;
-      }
+      // Clone trick array and append
+      const newTrick = [...state.trick, action.card];
 
-      // Add to trick
-      next.trick.push(action.card);
-
-      // Advance turn
-      next.currentPlayerIndex = (next.currentPlayerIndex + 1) % 4;
-
-      return next;
+      return {
+        ...state,
+        players: newPlayers,
+        trick: newTrick,
+        // Track who started the trick
+        trickStartPlayerIndex:
+          state.trick.length === 0
+            ? state.currentPlayerIndex
+            : state.trickStartPlayerIndex,
+        currentPlayerIndex: (state.currentPlayerIndex + 1) % 4,
+      };
     }
 
     case 'END_TRICK': {
-      if (next.phase !== 'PLAYING') return state;
-      if (next.trick.length !== 4) return state;
+      if (state.phase !== 'PLAYING') return state;
+      if (state.trick.length !== 4) return state;
 
-      const winnerId = resolveTrick(next);
+      const winnerId = resolveTrick(state);
       if (!winnerId) return state;
 
-      next.trick = [];
-      next.trickStartPlayerIndex = undefined; // ADD THIS LINE
-      next.currentPlayerIndex = getPlayerIndex(next, winnerId);
-
-      return next;
+      return {
+        ...state,
+        trick: [],
+        trickStartPlayerIndex: undefined,
+        currentPlayerIndex: getPlayerIndex(state, winnerId),
+      };
     }
 
     // -------------------------------
     // ROUND END
     // -------------------------------
     case "END_ROUND": {
-      if (!next.bidderId || !next.highestBid) return state;
+      if (!state.bidderId || !state.highestBid) return state;
 
-      calculateScore(next, next.highestBid, next.bidderId);
+      // calculateScore mutates the state it receives, so clone the
+      // teams objects and players array before passing them in.
+      const next: GameState = {
+        ...state,
+        teams: {
+          1: { ...state.teams[1] },
+          2: { ...state.teams[2] },
+        },
+        players: state.players.map((p) => ({ ...p })),
+      };
+
+      calculateScore(next, next.highestBid!, next.bidderId!);
 
       next.phase = "SCORING";
       return next;

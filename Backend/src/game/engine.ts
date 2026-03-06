@@ -26,6 +26,33 @@ export class GameEngine {
         this.startedAt = new Date();
     }
 
+    /**
+     * Factory: Hydrate a GameEngine from a previously saved GameState
+     * Validates shape before assigning to avoid corrupt engine state.
+     */
+    public static fromState(state: GameState, playerIds: string[], roomId: string): GameEngine {
+        // Basic runtime validation of the serialized state
+        const phases = new Set(['DEALING', 'BIDDING', 'PLAYING', 'SCORING', 'GAME_OVER']);
+        if (!state || typeof state !== 'object') throw new Error('Invalid GameState: not an object');
+        if (!Array.isArray(state.players) || state.players.length !== 4) throw new Error('Invalid GameState: players must be length 4');
+        if (!state.teams || typeof state.teams !== 'object' || !state.teams[1] || !state.teams[2]) throw new Error('Invalid GameState: missing teams');
+        if (!Array.isArray(state.deck) || !Array.isArray(state.trick)) throw new Error('Invalid GameState: deck/trick must be arrays');
+        if (typeof state.currentPlayerIndex !== 'number' || state.currentPlayerIndex < 0 || state.currentPlayerIndex > 3) throw new Error('Invalid GameState: currentPlayerIndex');
+        if (!phases.has(state.phase as any)) throw new Error('Invalid GameState: phase');
+
+        // Ensure player IDs are present and match provided set
+        const stateIds = state.players.map(p => p.id).sort();
+        const inputIds = [...playerIds].sort();
+        if (stateIds.length !== inputIds.length || !stateIds.every((v, i) => v === inputIds[i])) {
+            throw new Error('Invalid GameState: player IDs do not match provided playerIds');
+        }
+
+        const engine = new GameEngine(playerIds, roomId);
+        // Assign validated state safely inside class
+        engine.state = state;
+        return engine;
+    }
+
     public getRoomId(): string {
         return this.roomId;
     }

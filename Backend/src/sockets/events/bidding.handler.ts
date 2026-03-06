@@ -83,8 +83,13 @@ async function handlePlaceBid(
         return;
     }
 
-    // Use stable playerId from socket.data, not socket.id
-    const playerId = socket.data.playerId || socket.id;
+    // Use stable playerId derived from verified JWT (set in auth middleware)
+    const playerId = socket.data.playerId || socket.data.userId;
+    if (!playerId) {
+        socket.emit('error', { code: 'UNAUTHORIZED', message: 'Player ID not found' });
+        return;
+    }
+
     const action: GameAction = { type: 'BID', playerId, value };
     const success = room.gameEngine.dispatch(action);
 
@@ -119,8 +124,13 @@ async function handlePassBid(
         return;
     }
 
-    // Use stable playerId
-    const playerId = socket.data.playerId || socket.id;
+    // Use stable playerId derived from verified JWT
+    const playerId = socket.data.playerId || socket.data.userId;
+    if (!playerId) {
+        socket.emit('error', { code: 'UNAUTHORIZED', message: 'Player ID not found' });
+        return;
+    }
+
     const action: GameAction = { type: 'PASS', playerId };
     const success = room.gameEngine.dispatch(action);
 

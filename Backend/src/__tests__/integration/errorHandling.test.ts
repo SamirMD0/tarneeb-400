@@ -36,12 +36,13 @@ describe('Error Handling Integration Tests', () => {
         process.env.REDIS_URL = 'redis://localhost:6379';
 
         process.env.PORT = '5001';
-        process.env.CORS_ORIGIN = '*';
+        process.env.CORS_ORIGIN = 'http://localhost:3000';
         process.env.LOG_ERRORS = 'false';
         process.env.EXPOSE_STACK_TRACES = 'true';
         process.env.RATE_LIMIT_WINDOW_MS = '900000';
         process.env.RATE_LIMIT_MAX_REQUESTS = '100';
         process.env.ROOM_CREATION_LIMIT = '3';
+        process.env.JWT_SECRET = 'test-secret-key-minimum-32-characters-required-here';
         
         validateEnv();
     });

@@ -43,13 +43,13 @@ export function sanitizeXSS(req: Request, res: Response, next: NextFunction): vo
     // Sanitize query - MUST modify in place (req.query is read-only)
     if (req.query && typeof req.query === 'object') {
         const sanitized = sanitizeValue(req.query) as Record<string, any>;
-        
+
         // Clear all existing properties
         const existingKeys = Object.keys(req.query);
         for (const key of existingKeys) {
             delete (req.query as any)[key];
         }
-        
+
         // Add sanitized properties back
         for (const [key, value] of Object.entries(sanitized)) {
             (req.query as any)[key] = value;
@@ -133,30 +133,23 @@ function sanitizeString(input: string): string {
  * HTTP Parameter Pollution Prevention
  * Ensures no duplicate query parameters except whitelisted ones
  */
-const ALLOWED_DUPLICATES = ['sort', 'fields', 'filter'];
+const ALLOWED_DUPLICATES = ['sort', 'fields'];
 
 export function preventHPP(req: Request, res: Response, next: NextFunction): void {
     if (!req.query || typeof req.query !== 'object') {
         return next();
     }
-     const sanitizedQuery: Record<string, unknown> = {};
-    const seen = new Set<string>();
+    const sanitizedQuery: Record<string, unknown> = {};
 
     for (const key of Object.keys(req.query)) {
-         const value = req.query[key];
+        const value = req.query[key];
 
-        if (!ALLOWED_DUPLICATES.includes(key) && Array.isArray(value)) {
+        if (Array.isArray(value) && !ALLOWED_DUPLICATES.includes(key)) {
+            // Deduplicate: keep only the first value
             sanitizedQuery[key] = value[0];
-            continue;
-        }
-
-        if (seen.has(key) && !ALLOWED_DUPLICATES.includes(key)) {
-           sanitizedQuery[key] = Array.isArray(value) ? value[0] : value;
-        }
-        else {
+        } else {
             sanitizedQuery[key] = value;
         }
-        seen.add(key);
     }
 
     Object.defineProperty(req, 'query', {

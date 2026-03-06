@@ -4,6 +4,7 @@ import { GameEngine } from "../game/engine.js";
 import { PlayerID } from "../types/player.types.js";
 import { RoomConfig, RoomID } from "../types/room.types.js";
 import { roomCache } from "../cache/roomCache.js";
+import { logger } from "../lib/logger.js";
 
 /**
  * Lobby-level player metadata (before game starts)
@@ -43,7 +44,7 @@ export class Room {
       try {
         await roomCache.cacheRoom(this);
       } catch (error) {
-        console.error(`Failed to cache room ${this.id}:`, error);
+        logger.error(`Failed to cache room`, { roomId: this.id, error });
       }
     };
 
@@ -98,6 +99,15 @@ export class Room {
     return this.players.size === 4 && !this.gameEngine;
   }
 
+  public reattachPersistence(): void {
+    if (this.gameEngine) {
+      this.gameEngine.subscribe((state) => {
+        const immediate = state.phase === 'SCORING' || state.phase === 'GAME_OVER';
+        this.saveState(immediate);
+      });
+    }
+  }
+
   async startGame(): Promise<boolean> {
     if (!this.isReady()) return false;
 
@@ -110,8 +120,9 @@ export class Room {
     this.gameEngine = new GameEngine(playerIds, this.id);
 
     // Subscribe to game engine updates for debounced caching
-    this.gameEngine.subscribe(() => {
-      this.saveState(false); // Debounced save for game actions
+    this.gameEngine.subscribe((state) => {
+      const immediate = state.phase === 'SCORING' || state.phase === 'GAME_OVER';
+      this.saveState(immediate);
     });
 
     await this.saveState(true); // Immediate save on start

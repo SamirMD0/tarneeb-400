@@ -25,13 +25,14 @@ import {
     handleUnhandledRejection,
 } from './middlewares/errorHandler.js';
 
-import { connectMongo } from './lib/mongoose.js';
+import { connectMongo, disconnectMongo } from './lib/mongoose.js';
 import { redis } from './lib/redis.js';
 import healthRouter from './routes/health.js';
+import authRouter from './routes/auth.js';
 
 // Phase 17/20: Socket.IO setup with handlers
 import { initializeSocketServer } from './sockets/socketServer.js';
-import { registerHandlers } from './sockets/socketHandlers.js';
+import { registerHandlers, roomManager } from './sockets/socketHandlers.js';
 
 // Phase 19: Fail-fast environment validation
 const env = validateEnv();
@@ -69,7 +70,7 @@ app.use((req, res, next) => {
     // req.path can be ANY user input: /users/123, /users/456, etc. = infinite cardinality
     // req.route?.path is the Express route pattern: /users/:id = bounded cardinality
     const route = req.route?.path || req.path.split('/').slice(0, 3).join('/') || 'unknown';
-    
+
     const end = httpRequestDuration.startTimer({
         method: req.method,
         route: route
@@ -84,6 +85,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api', healthRouter);
+app.use('/api/auth', authRouter);
 
 // Phase 20: Metrics Endpoint
 app.get('/metrics', async (req, res) => {
@@ -101,6 +103,50 @@ app.use(notFoundHandler);
 // Phase 19: Global error handler (MUST be last)
 app.use(errorHandler);
 
+// ---------------------------------------------------------------------------
+// Graceful shutdown
+// ---------------------------------------------------------------------------
+let isShuttingDown = false;
+
+async function shutdown(signal: string): Promise<void> {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
+    logger.info(`${signal} received — starting graceful shutdown`);
+
+    try {
+        // 1. Stop accepting new HTTP connections (waits for in-flight requests).
+        await new Promise<void>((resolve, reject) =>
+            httpServer.close((err) => (err ? reject(err) : resolve()))
+        );
+        logger.info('HTTP server closed');
+
+        // 2. Close Socket.IO (disconnects all sockets cleanly).
+        await new Promise<void>((resolve) => io.close(() => resolve()));
+        logger.info('Socket.IO closed');
+
+        // 3. Disconnect MongoDB.
+        await disconnectMongo();
+        logger.info('MongoDB disconnected');
+
+        // 4. Disconnect Redis.
+        await redis.disconnect();
+        logger.info('Redis disconnected');
+
+        logger.info('Graceful shutdown complete');
+        process.exit(0);
+    } catch (err) {
+        logger.error('Error during graceful shutdown', { error: err });
+        process.exit(1);
+    }
+}
+
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT', () => void shutdown('SIGINT'));
+
+// ---------------------------------------------------------------------------
+// Bootstrap
+// ---------------------------------------------------------------------------
 async function bootstrap(): Promise<void> {
     try {
         await connectMongo();
@@ -108,6 +154,9 @@ async function bootstrap(): Promise<void> {
 
         await redis.connect();
         logger.info('Connected to Redis');
+
+        // Hydrate rooms from Redis before accepting connections
+        await roomManager.initialize();
 
         httpServer.listen(PORT, () => {
             logger.info(`✅ Server running on port ${PORT}`, {

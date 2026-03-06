@@ -8,6 +8,8 @@ import type {
     SocketData
 } from '../types/socket.types.js';
 import { socketConnectionLimiter } from '../middlewares/rateLimiter.js';
+import { authMiddleware } from './socketMiddleware.js';
+import { getEnv } from '../lib/env.js';
 
 export function initializeSocketServer(httpServer: HTTPServer): Server<
     ClientToServerEvents,
@@ -15,6 +17,7 @@ export function initializeSocketServer(httpServer: HTTPServer): Server<
     {},
     SocketData
 > {
+    const env = getEnv();
     const io = new Server<
         ClientToServerEvents,
         ServerToClientEvents,
@@ -22,7 +25,7 @@ export function initializeSocketServer(httpServer: HTTPServer): Server<
         SocketData
     >(httpServer, {
         cors: {
-            origin: process.env.CORS_ORIGIN || '*',
+            origin: env.CORS_ORIGIN,
             methods: ['GET', 'POST'],
             credentials: true,
         },
@@ -47,6 +50,9 @@ export function initializeSocketServer(httpServer: HTTPServer): Server<
             }
         });
     }
+
+    // Enforce JWT auth for all socket connections
+    io.use(authMiddleware as any);
 
     // Connection event
     io.on('connection', (socket: Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>) => {

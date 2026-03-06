@@ -1,6 +1,6 @@
 // Backend/src/services/gameHistory.service.ts - Phase 15: Game Persistence Layer
 
-import { GameModel, UserModel, type IGame } from '../models/index.js';
+import { GameModel, PlayerStatsModel, type IGame } from '../models/index.js';
 import type { GameState } from '../game/state.js';
 import type { LeaderboardEntry } from '../types/player.types.js';
 import type { RoundSnapshot } from '../types/game.types.js';
@@ -38,7 +38,7 @@ export async function saveGame(
     const updatePromises = gameState.players.map(async (player) => {
         const isWinner = player.teamId === winningTeam;
 
-        await UserModel.findOneAndUpdate(
+        await PlayerStatsModel.findOneAndUpdate(
             { socketId: player.id },
             {
                 $inc: {
@@ -47,7 +47,7 @@ export async function saveGame(
                 },
                 $setOnInsert: {
                     socketId: player.id,
-                    username: player.id, // Default username to socketId if new
+                    username: player.id, // PlayerState has no name; default username to socketId
                     createdAt: new Date(),
                 },
             },
@@ -84,18 +84,18 @@ export async function getGameHistory(
  * Returns top players with calculated win rate.
  */
 export async function getLeaderboard(limit: number = 10): Promise<LeaderboardEntry[]> {
-    const users = await UserModel.find({ gamesPlayed: { $gt: 0 } })
+    const players = await PlayerStatsModel.find({ gamesPlayed: { $gt: 0 } })
         .sort({ wins: -1, gamesPlayed: 1 })
         .limit(limit)
         .lean()
         .exec();
 
-    return users.map((user) => ({
-        userId: user.socketId,
-        username: user.username,
-        gamesPlayed: user.gamesPlayed,
-        wins: user.wins,
-        winRate: user.gamesPlayed > 0 ? (user.wins / user.gamesPlayed) * 100 : 0,
+    return players.map((p) => ({
+        userId: (p as any).socketId,
+        username: (p as any).username,
+        gamesPlayed: (p as any).gamesPlayed,
+        wins: (p as any).wins,
+        winRate: (p as any).gamesPlayed > 0 ? ((p as any).wins / (p as any).gamesPlayed) * 100 : 0,
     }));
 }
 
@@ -107,13 +107,13 @@ export async function getUserStats(userId: string): Promise<{
     wins: number;
     winRate: number;
 } | null> {
-    const user = await UserModel.findOne({ socketId: userId }).lean().exec();
+    const stats = await PlayerStatsModel.findOne({ socketId: userId }).lean().exec();
 
-    if (!user) return null;
+    if (!stats) return null;
 
     return {
-        gamesPlayed: user.gamesPlayed,
-        wins: user.wins,
-        winRate: user.gamesPlayed > 0 ? (user.wins / user.gamesPlayed) * 100 : 0,
+        gamesPlayed: (stats as any).gamesPlayed,
+        wins: (stats as any).wins,
+        winRate: (stats as any).gamesPlayed > 0 ? ((stats as any).wins / (stats as any).gamesPlayed) * 100 : 0,
     };
 }

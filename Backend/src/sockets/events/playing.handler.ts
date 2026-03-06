@@ -87,8 +87,8 @@ async function handlePlayCard(
         return;
     }
 
-    // Use stable playerId from socket.data, not socket.id
-    const playerId = socket.data.playerId || socket.id;
+    // Use stable playerId derived from verified JWT set during handshake
+    const playerId = socket.data.playerId || socket.data.userId;
 
     const action: GameAction = {
         type: 'PLAY_CARD',
