@@ -1,12 +1,15 @@
 // Backend/src/socket/socket.test.ts - Phase 17: WebSocket Foundation Tests
 
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, before, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import ioClient from 'socket.io-client';
+import jwt from 'jsonwebtoken';
 import { initializeSocketServer, getConnectionCount, getRoomCount } from './socketServer.js';
 import { registerHandlers } from './socketHandlers.js';
+import { getEnv, validateEnv } from '../lib/env.js';
 
 type ClientSocket = ReturnType<typeof ioClient>;
 
@@ -16,6 +19,16 @@ describe('Socket.IO Server - Phase 17', () => {
 
     let serverPort: number;
     let clientSockets: ClientSocket[] = [];
+
+    before(() => {
+        process.env.NODE_ENV = 'test';
+        process.env.JWT_SECRET = 'test-secret-minimum-32-chars-required!!';
+        process.env.MONGO_URI = 'mongodb://localhost:27017/test';
+        process.env.REDIS_URL = 'redis://localhost:6379';
+        process.env.CORS_ORIGIN = 'http://localhost:3000';
+
+        validateEnv();
+    });
 
     beforeEach(async () => {
         // Create HTTP server
@@ -51,10 +64,20 @@ describe('Socket.IO Server - Phase 17', () => {
     /**
      * Helper: Create a client socket
      */
-    function createClient(): ClientSocket {
+    function createClient(userId?: string): ClientSocket {
+        const env = getEnv();
+        const token = jwt.sign(
+            {
+                userId: userId ?? `test-user-${randomUUID()}`,
+                email: 'test@test.com',
+            },
+            env.JWT_SECRET
+        );
+
         const socket = ioClient(`http://localhost:${serverPort}`, {
             transports: ['websocket'],
             forceNew: true,
+            auth: { token },
         });
         clientSockets.push(socket);
         return socket;
@@ -405,10 +428,20 @@ describe('Socket.IO Server - Phase 17', () => {
         type FourSockets = [ClientSocket, ClientSocket, ClientSocket, ClientSocket];
 
         async function createFullRoom(): Promise<{ roomId: string; sockets: FourSockets }> {
-            const s1 = createClient();
-            const s2 = createClient();
-            const s3 = createClient();
-            const s4 = createClient();
+            const u1 = `test-user-${randomUUID()}`;
+            const u2 = `test-user-${randomUUID()}`;
+            const u3 = `test-user-${randomUUID()}`;
+            const u4 = `test-user-${randomUUID()}`;
+
+            const s1 = createClient(u1);
+            const s2 = createClient(u2);
+            const s3 = createClient(u3);
+            const s4 = createClient(u4);
+
+            (s1 as any).testUserId = u1;
+            (s2 as any).testUserId = u2;
+            (s3 as any).testUserId = u3;
+            (s4 as any).testUserId = u4;
 
             await Promise.all([
                 new Promise<void>(resolve => s1.on('connect', () => resolve())),
@@ -544,10 +577,10 @@ describe('Socket.IO Server - Phase 17', () => {
             assert.ok(s4.id, 'Socket id should be set');
 
             const socketById = new Map<string, ClientSocket>([
-                [s1.id, s1],
-                [s2.id, s2],
-                [s3.id, s3],
-                [s4.id, s4],
+                [(s1 as any).testUserId as string, s1],
+                [(s2 as any).testUserId as string, s2],
+                [(s3 as any).testUserId as string, s3],
+                [(s4 as any).testUserId as string, s4],
             ]);
 
             function pickCard(socketId: string, gameState: any): any {
@@ -570,7 +603,7 @@ describe('Socket.IO Server - Phase 17', () => {
                 assert.ok(currentSocket, 'Current player socket should exist');
 
                 assert.ok(currentSocket.id, 'Socket id should be set');
-                const card = pickCard(currentSocket.id, state);
+                const card = pickCard(currentPlayerId, state);
                 assert.ok(card, 'Should pick a playable card');
 
                 const nextUpdatePromise = waitForEvent<any>(s1, 'game_state_updated');
