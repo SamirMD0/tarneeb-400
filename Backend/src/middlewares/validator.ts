@@ -26,7 +26,7 @@ export const CreateRoomSchema = z.object({
 
 // Join Room Payload
 export const JoinRoomSchema = z.object({
-    roomId: z.string().min(1),
+    roomId: z.string().min(1).max(36),
     playerName: z.string().min(1).max(50).optional(),
 });
 
@@ -41,7 +41,7 @@ const CardSchema = z.object({
 export const BidActionSchema = z.object({
     type: z.literal('BID'),
     playerId: z.string(),
-    value: z.number().int().min(7).max(13),
+    value: z.number().int().min(2).max(13),
 });
 
 export const PassActionSchema = z.object({
@@ -89,7 +89,7 @@ export const GameActionSchema = z.discriminatedUnion('type', [
 
 // Socket Event Schemas
 export const PlaceBidSchema = z.object({
-    value: z.number().int().min(7).max(13),
+    value: z.number().int().min(2).max(13),
 });
 
 export const SetTrumpSchema = z.object({

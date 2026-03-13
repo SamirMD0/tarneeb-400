@@ -23,25 +23,30 @@ const SENSITIVE_FIELDS = [
 /**
  * Recursively redact sensitive fields from an object
  */
-function redactSensitive(obj: unknown, depth = 0): unknown {
+function redactSensitive(obj: unknown, depth = 0, seen = new WeakSet()): unknown {
     // Prevent infinite recursion
     if (depth > 10) return '[MAX_DEPTH]';
 
     if (obj === null || obj === undefined) return obj;
 
-    if (typeof obj === 'string') return obj;
+    if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean') return obj;
+
+    if (typeof obj === 'object') {
+        if (seen.has(obj as object)) return '[CIRCULAR]';
+        seen.add(obj as object);
+    }
 
     if (Array.isArray(obj)) {
-        return obj.map((item) => redactSensitive(item, depth + 1));
+        return obj.map((item) => redactSensitive(item, depth + 1, seen));
     }
 
     if (typeof obj === 'object') {
         const redacted: Record<string, unknown> = {};
-        for (const [key, value] of Object.entries(obj)) {
+        for (const [key, value] of Object.entries(obj as object)) {
             if (SENSITIVE_FIELDS.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
                 redacted[key] = '[REDACTED]';
             } else {
-                redacted[key] = redactSensitive(value, depth + 1);
+                redacted[key] = redactSensitive(value, depth + 1, seen);
             }
         }
         return redacted;

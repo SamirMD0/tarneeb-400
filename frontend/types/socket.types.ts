@@ -36,7 +36,7 @@ export interface ServerToClientEvents {
   // Player presence events — room.handler.ts
   player_joined: (data: { playerId: string; playerName: string; room: SerializedRoom }) => void;
   player_left: (data: { playerId: string; room: SerializedRoom }) => void;
-  player_disconnected: (data: { playerId: string; room: SerializedRoom }) => void;
+  player_disconnected: (data: { playerId: string; reconnectWindowMs?: number; room: SerializedRoom }) => void;
   player_reconnected: (data: { playerId: string; room: SerializedRoom }) => void;
 
   // Game events — all handlers emit game_state_updated after every accepted action

@@ -7,6 +7,7 @@ import type { GameState } from '../../game/state.js';
 import type { RoomManager } from '../../rooms/roomManager.js';
 import { applyMiddleware } from '../socketMiddleware.js';
 import { metrics } from '../../lib/metrics.js';
+import { PlaceBidSchema, SetTrumpSchema, validateSocketPayload } from '../../middlewares/validator.js';
 
 type SocketType = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
 
@@ -66,11 +67,14 @@ async function handlePlaceBid(
         return;
     }
 
-    const value = data?.value;
-    if (typeof value !== 'number') {
+    let validated;
+    try {
+        validated = validateSocketPayload(PlaceBidSchema, data);
+    } catch {
         socket.emit('error', { code: 'INVALID_PAYLOAD', message: 'Invalid bid payload' });
         return;
     }
+    const { value } = validated;
 
     const room = await roomManager.getRoom(roomId);
     if (!room) {
@@ -154,11 +158,14 @@ async function handleSetTrump(
         return;
     }
 
-    const suit = data?.suit;
-    if (typeof suit !== 'string') {
+    let validated;
+    try {
+        validated = validateSocketPayload(SetTrumpSchema, data);
+    } catch {
         socket.emit('error', { code: 'INVALID_PAYLOAD', message: 'Invalid trump payload' });
         return;
     }
+    const { suit } = validated;
 
     const room = await roomManager.getRoom(roomId);
     if (!room) {

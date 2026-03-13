@@ -190,14 +190,24 @@ describe('GameActionSchema', () => {
         assert.equal(result.success, true);
     });
 
-    it('should reject invalid BID value', () => {
+    it('should reject invalid BID value above structural max', () => {
         const invalidBid = {
             type: 'BID',
             playerId: 'player1',
-            value: 15, // Max is 13
+            value: 14, // Exceeds structural max of 13
         };
 
         const result = GameActionSchema.safeParse(invalidBid);
+        assert.equal(result.success, false);
+    });
+
+    it('should accept BID value of 2 (valid for low-score players)', () => {
+        const result = GameActionSchema.safeParse({ type: 'BID', playerId: 'p1', value: 2 });
+        assert.equal(result.success, true);
+    });
+
+    it('should reject BID value of 1 (below structural minimum)', () => {
+        const result = GameActionSchema.safeParse({ type: 'BID', playerId: 'p1', value: 1 });
         assert.equal(result.success, false);
     });
 

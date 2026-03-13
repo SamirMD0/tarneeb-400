@@ -196,6 +196,7 @@ async function handleDisconnect(socket: SocketType, io: Server<ClientToServerEve
                 await room.markPlayerDisconnected(playerId);
                 io.to(roomId).emit('player_disconnected', {
                     playerId,
+                    reconnectWindowMs: 30_000,
                     room: serializeRoom(room),
                 });
                 logger.debug('Player marked disconnected', { roomId, playerId });

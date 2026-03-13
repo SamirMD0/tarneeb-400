@@ -1,5 +1,7 @@
 // Backend/src/rooms/room.ts - PHASE 14 CORRECTED
 
+import { saveGame } from '../services/gameHistory.service.js';
+import { metrics } from '../lib/metrics.js';
 import { GameEngine } from "../game/engine.js";
 import { PlayerID } from "../types/player.types.js";
 import { RoomConfig, RoomID } from "../types/room.types.js";
@@ -22,6 +24,8 @@ export class Room {
   public gameEngine?: GameEngine;
   private saveTimeout: NodeJS.Timeout | null = null;
   private readonly DEBOUNCE_MS = 1000;
+  private readonly RECONNECT_TIMEOUT_MS = 30_000; // 30 seconds
+  private reconnectTimers: Map<PlayerID, NodeJS.Timeout> = new Map();
 
   constructor(id: RoomID, config: RoomConfig) {
     this.id = id;
@@ -79,6 +83,13 @@ export class Room {
   async removePlayer(id: PlayerID): Promise<boolean> {
     if (!this.players.has(id)) return false;
 
+    // Cancel any pending reconnect timer for this player
+    const timer = this.reconnectTimers.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      this.reconnectTimers.delete(id);
+    }
+
     this.players.delete(id);
 
     // If a game is running, invalidate it immediately
@@ -117,7 +128,14 @@ export class Room {
     if (playerIds.length !== 4) return false;
 
     // GameEngine handles creating PlayerState objects with cards, teams, etc.
-    this.gameEngine = new GameEngine(playerIds, this.id);
+    this.gameEngine = new GameEngine(
+      playerIds,
+      this.id,
+      async (state, winner, startedAt, rounds) => {
+        await saveGame(this.id, state, winner, startedAt, rounds);
+        metrics.gameCompleted(winner);
+      }
+    );
 
     // Subscribe to game engine updates for debounced caching
     this.gameEngine.subscribe((state) => {
@@ -134,25 +152,44 @@ export class Room {
   }
 
   /**
-   * Mark player as disconnected (useful for reconnection logic)
+   * Mark player as disconnected and start a reconnection window timer.
+   * If the player does not reconnect within RECONNECT_TIMEOUT_MS, they
+   * are automatically removed from the room.
    */
   async markPlayerDisconnected(id: PlayerID): Promise<boolean> {
     const player = this.players.get(id);
     if (!player) return false;
 
     player.isConnected = false;
+
+    // Start reconnection countdown — auto-remove if they don't return
+    const timer = setTimeout(async () => {
+      this.reconnectTimers.delete(id);
+      await this.removePlayer(id);
+      logger.info('Player removed after reconnect timeout', { roomId: this.id, playerId: id });
+    }, this.RECONNECT_TIMEOUT_MS);
+
+    this.reconnectTimers.set(id, timer);
     await this.saveState(true);
     return true;
   }
 
   /**
-   * Mark player as reconnected
+   * Mark player as reconnected and cancel any pending eviction timer.
    */
   async markPlayerReconnected(id: PlayerID): Promise<boolean> {
     const player = this.players.get(id);
     if (!player) return false;
 
     player.isConnected = true;
+
+    // Cancel pending eviction timer
+    const timer = this.reconnectTimers.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      this.reconnectTimers.delete(id);
+    }
+
     await this.saveState(true);
     return true;
   }

@@ -26,10 +26,39 @@ interface FullHealthStatus {
 }
 
 /**
- * GET /health - Full health check with dependency status and stats
- * Use for debugging and detailed monitoring
+ * Health check result cache to reduce DB probe load.
+ * Under Kubernetes with 5s probe intervals × N replicas, the /health
+ * endpoint makes at most 1 full probe per HEALTH_CACHE_TTL_MS window.
  */
-router.get('/health', async (_req: Request, res: Response) => {
+interface CachedHealth {
+    data: FullHealthStatus;
+    expiresAt: number;
+}
+let healthCache: CachedHealth | null = null;
+const HEALTH_CACHE_TTL_MS = 5000; // 5 seconds
+
+/**
+ * Reset the health cache. FOR TEST USE ONLY.
+ */
+export function clearHealthCache(): void {
+    healthCache = null;
+}
+
+/**
+ * GET /health - Full health check with dependency status and stats
+ * Use for debugging and detailed monitoring.
+ * Results are cached for HEALTH_CACHE_TTL_MS to reduce DB/Redis probe load.
+ */
+router.get('/health', async (_req: Request, res: Response): Promise<void> => {
+    const now = Date.now();
+
+    // Return cached response if still valid
+    if (healthCache && now < healthCache.expiresAt) {
+        const statusCode = healthCache.data.status === 'ok' ? 200 : 503;
+        res.status(statusCode).json(healthCache.data);
+        return;
+    }
+
     const [mongoOk, redisOk, mongoStats, redisStats] = await Promise.all([
         pingMongo(),
         redis.ping(),
@@ -46,6 +75,9 @@ router.get('/health', async (_req: Request, res: Response) => {
         mongoStats,
         redisStats,
     };
+
+    // Cache the result
+    healthCache = { data: health, expiresAt: now + HEALTH_CACHE_TTL_MS };
 
     const statusCode = health.status === 'ok' ? 200 : 503;
 

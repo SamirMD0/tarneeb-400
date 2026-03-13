@@ -7,6 +7,7 @@ import type { GameState } from '../../game/state.js';
 import type { RoomManager } from '../../rooms/roomManager.js';
 import { errorBoundary } from '../socketMiddleware.js';
 import { metrics } from '../../lib/metrics.js';
+import { PlayCardSchema, validateSocketPayload } from '../../middlewares/validator.js';
 
 type SocketType = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
 
@@ -61,14 +62,17 @@ async function handlePlayCard(
         return;
     }
 
-    const card = data?.card;
-    if (!card || typeof card.suit !== 'string' || typeof card.rank !== 'string') {
+    let validated;
+    try {
+        validated = validateSocketPayload(PlayCardSchema, data);
+    } catch {
         socket.emit('error', {
             code: 'INVALID_PAYLOAD',
             message: 'Invalid play_card payload',
         });
         return;
     }
+    const { card } = validated;
 
     const room = await roomManager.getRoom(roomId);
     if (!room) {

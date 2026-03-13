@@ -18,7 +18,7 @@ type EventHandler = (socket: SocketType, ...args: any[]) => Promise<void> | void
 // Rate limiting configuration
 const RATE_LIMIT_WINDOW_MS = 1000; // 1 second
 const RATE_LIMIT_MAX_ACTIONS = 10; // 10 actions per second
-const RATE_LIMIT_CLEANUP_INTERVAL = 60000; // Cleanup every minute
+const RATE_LIMIT_CLEANUP_INTERVAL = 5000; // Cleanup every 5 seconds
 
 interface RateLimitData {
     count: number;
@@ -29,7 +29,7 @@ interface RateLimitData {
 const rateLimitMap = new Map<string, RateLimitData>();
 
 // Cleanup old entries periodically
-setInterval(() => {
+export const rateLimitCleanupTimer = setInterval(() => {
     const now = Date.now();
     for (const [socketId, data] of rateLimitMap.entries()) {
         if (now > data.resetTime) {
@@ -37,6 +37,7 @@ setInterval(() => {
         }
     }
 }, RATE_LIMIT_CLEANUP_INTERVAL);
+rateLimitCleanupTimer.unref();
 
 /**
  * Authentication middleware
@@ -175,4 +176,11 @@ export function validatePayload<T>(
  */
 export function cleanupSocketData(socketId: string): void {
     rateLimitMap.delete(socketId);
+}
+
+/**
+ * Returns the current size of the rate limit map (for testing/monitoring)
+ */
+export function getRateLimitMapSize(): number {
+    return rateLimitMap.size;
 }

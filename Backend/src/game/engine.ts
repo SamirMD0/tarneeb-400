@@ -3,10 +3,8 @@
 import { GameState, createInitialGameState, PlayerState } from "./state.js";
 import { GameAction } from "./actions.js";
 import { applyAction } from "./reducer.js";
-import { saveGame } from "../services/gameHistory.service.js";
 import type { RoundSnapshot } from "../types/game.types.js";
 import { logger } from "../lib/logger.js";
-import { metrics } from "../lib/metrics.js";
 import { withTimingSync } from "../monitoring/performance.js";
 
 type GameListener = (state: GameState) => void;
@@ -20,7 +18,16 @@ export class GameEngine {
     private currentRoundNumber = 1;
     private hasPersisted = false;
 
-    constructor(playerIds: string[], roomId?: string) {
+    constructor(
+        playerIds: string[],
+        roomId?: string,
+        private readonly onGameOver?: (
+            state: GameState,
+            winner: 1 | 2,
+            startedAt: Date,
+            rounds: RoundSnapshot[]
+        ) => Promise<void>
+    ) {
         this.state = createInitialGameState(playerIds);
         this.roomId = roomId ?? 'unknown';
         this.startedAt = new Date();
@@ -30,7 +37,17 @@ export class GameEngine {
      * Factory: Hydrate a GameEngine from a previously saved GameState
      * Validates shape before assigning to avoid corrupt engine state.
      */
-    public static fromState(state: GameState, playerIds: string[], roomId: string): GameEngine {
+    public static fromState(
+        state: GameState,
+        playerIds: string[],
+        roomId: string,
+        onGameOver?: (
+            state: GameState,
+            winner: 1 | 2,
+            startedAt: Date,
+            rounds: RoundSnapshot[]
+        ) => Promise<void>
+    ): GameEngine {
         // Basic runtime validation of the serialized state
         const phases = new Set(['DEALING', 'BIDDING', 'PLAYING', 'SCORING', 'GAME_OVER']);
         if (!state || typeof state !== 'object') throw new Error('Invalid GameState: not an object');
@@ -47,7 +64,7 @@ export class GameEngine {
             throw new Error('Invalid GameState: player IDs do not match provided playerIds');
         }
 
-        const engine = new GameEngine(playerIds, roomId);
+        const engine = new GameEngine(playerIds, roomId, onGameOver);
         // Assign validated state safely inside class
         engine.state = state;
         return engine;
@@ -98,8 +115,10 @@ export class GameEngine {
             }
 
             // Phase 15: Persist game when it ends
-            if (this.isGameOver() && !this.hasPersisted && process.env.NODE_ENV !== 'test') {
-                this.persistGame();
+            if (this.isGameOver() && !this.hasPersisted && this.onGameOver) {
+                this.hasPersisted = true;
+                this.onGameOver(this.state, this.getWinner()!, this.startedAt, this.rounds)
+                    .catch(err => logger.error('Failed to persist game via callback', { roomId: this.roomId, error: err }));
             }
 
             return true;
@@ -147,30 +166,5 @@ export class GameEngine {
 
     private notifyListeners() {
         this.listeners.forEach(listener => listener(this.state));
-    }
-
-    /**
-     * Persist game to MongoDB when game ends
-     */
-    private async persistGame(): Promise<void> {
-        const winner = this.getWinner();
-        if (!winner) return;
-
-        this.hasPersisted = true;
-
-        try {
-            await saveGame(
-                this.roomId,
-                this.state,
-                winner,
-                this.startedAt,
-                this.rounds
-            );
-            logger.info(`Game persisted successfully`, { roomId: this.roomId });
-            metrics.gameCompleted(winner);
-        } catch (error) {
-            // Don't throw - game can continue even if persistence fails
-            logger.error(`Failed to persist game`, { roomId: this.roomId, error });
-        }
     }
 }

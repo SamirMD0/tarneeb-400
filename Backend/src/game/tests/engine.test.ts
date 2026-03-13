@@ -119,6 +119,23 @@ describe("GameEngine", () => {
             assert.strictEqual(engine.isGameOver(), false);
             assert.strictEqual(engine.getWinner(), undefined);
         });
+
+        it('should invoke onGameOver callback when game ends', async () => {
+            let callbackFired = false;
+            const engine = new GameEngine(
+                MOCK_PLAYERS,
+                'test-room',
+                async () => { callbackFired = true; }
+            );
+            const state = (engine as any).state;
+            state.teams[1].score = 41;
+            // START_BIDDING is valid in DEALING phase, forcing a state update
+            // which triggers the isGameOver() check inside Engine.dispatch.
+            engine.dispatch({ type: 'START_BIDDING' });
+            // allow microtask to run
+            await new Promise(r => setImmediate(r));
+            assert.equal(callbackFired, true);
+        });
     });
 
     // =================================================================

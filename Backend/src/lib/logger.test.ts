@@ -84,4 +84,13 @@ describe('Logger', () => {
         assert.strictEqual(log.items[0], 'a');
         assert.strictEqual(log.items[2].secret, '[REDACTED]');
     });
+
+    it('should handle circular references without crashing', () => {
+        const circular: any = { name: 'test' };
+        circular.self = circular; // circular reference
+        // Should not throw
+        assert.doesNotThrow(() => {
+            logger.info('Circular test', circular);
+        });
+    });
 });

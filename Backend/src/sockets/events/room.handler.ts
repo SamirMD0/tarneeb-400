@@ -6,6 +6,8 @@ import type { RoomManager } from '../../rooms/roomManager.js';
 import type { GameState } from '../../game/state.js';
 import { applyMiddleware } from '../socketMiddleware.js';
 import { metrics } from '../../lib/metrics.js';
+import { CreateRoomSchema, JoinRoomSchema, validateSocketPayload } from '../../middlewares/validator.js';
+import type { z } from 'zod';
 
 type SocketType = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
 
@@ -91,15 +93,15 @@ function resolvePlayerId(socket: SocketType): string {
 // ─── Handlers ─────────────────────────────────────────────────────────────────
 
 async function handleCreateRoom(socket: SocketType, data: any, io: Server<ClientToServerEvents, ServerToClientEvents, {}, SocketData>, roomManager: RoomManager): Promise<void> {
-    const { config } = data ?? {};
-
-    if (!config || typeof config.maxPlayers !== 'number') {
-        socket.emit('error', {
-            code: 'INVALID_CONFIG',
-            message: 'Invalid room configuration',
-        });
+    // Validate payload via Zod
+    let validated: z.infer<typeof CreateRoomSchema>;
+    try {
+        validated = validateSocketPayload(CreateRoomSchema, data);
+    } catch {
+        socket.emit('error', { code: 'INVALID_PAYLOAD', message: 'Invalid create_room payload' });
         return;
     }
+    const { config, playerName } = validated;
 
     const room = await roomManager.createRoom(config);
 
@@ -108,8 +110,8 @@ async function handleCreateRoom(socket: SocketType, data: any, io: Server<Client
         socket.emit('error', { code: 'AUTH_REQUIRED', message: 'Authentication required' });
         return;
     }
-    const playerName = data?.playerName || `Player_${playerId.substring(0, 6)}`;
-    await room.addPlayer(playerId, playerName);
+    const name = playerName || `Player_${playerId.substring(0, 6)}`;
+    await room.addPlayer(playerId, name);
 
     socket.join(room.id);
     socket.data.roomId = room.id;
@@ -131,15 +133,15 @@ async function handleJoinRoom(
     io: Server<ClientToServerEvents, ServerToClientEvents, {}, SocketData>,
     roomManager: RoomManager
 ): Promise<void> {
-    const { roomId, playerName, playerId: requestedPlayerId } = data ?? {};
-
-    if (!roomId || typeof roomId !== 'string') {
-        socket.emit('error', {
-            code: 'INVALID_ROOM_ID',
-            message: 'Room ID is required',
-        });
+    // Validate payload via Zod
+    let validated: z.infer<typeof JoinRoomSchema>;
+    try {
+        validated = validateSocketPayload(JoinRoomSchema, data);
+    } catch {
+        socket.emit('error', { code: 'INVALID_PAYLOAD', message: 'Invalid join_room payload' });
         return;
     }
+    const { roomId, playerName } = validated;
 
     const room = await roomManager.getRoom(roomId);
     if (!room) {

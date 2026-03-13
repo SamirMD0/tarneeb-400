@@ -52,7 +52,7 @@ export interface ServerToClientEvents {
   // Player events
   player_joined: (data: { playerId: string; playerName: string; room: SerializedRoom }) => void;
   player_left: (data: { playerId: string; room: SerializedRoom }) => void;
-  player_disconnected: (data: { playerId: string; room: SerializedRoom }) => void;
+  player_disconnected: (data: { playerId: string; reconnectWindowMs?: number; room: SerializedRoom }) => void;
   player_reconnected: (data: { playerId: string; room: SerializedRoom }) => void;
 
   // Game events — SanitizedGameState (no deck)
