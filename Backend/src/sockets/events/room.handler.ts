@@ -16,29 +16,26 @@ export function registerRoomHandlers(
     io: Server<ClientToServerEvents, ServerToClientEvents, {}, SocketData>,
     roomManager: RoomManager
 ) {
-    // ✅ Phase 20: Wrap handlers with performance timing
-    // applyMiddleware already captures socket in closure — do NOT pass socket again
-    const createRoom = wrapWithTiming('create_room',
-        applyMiddleware(socket, (socket, data) => handleCreateRoom(socket, data, io, roomManager))
-    );
-    const joinRoom = wrapWithTiming('join_room',
-        applyMiddleware(socket, (socket, data) => handleJoinRoom(socket, data, io, roomManager))
-    );
-    const startGame = wrapWithTiming('start_game',
-        applyMiddleware(socket, (socket, data) => handleStartGame(socket, data, io, roomManager))
-    );
-    const leaveRoom = wrapWithTiming('leave_room',
-        applyMiddleware(socket, (socket, data) => handleLeaveRoom(socket, data, io, roomManager))
-    );
-    const refreshRoomList = wrapWithTiming('refresh_room_list',
-        applyMiddleware(socket, (socket, data) => handleRefreshRoomList(socket, data, roomManager))
-    );
+    // Bind handlers with middleware (auth, rate limit, error boundary)
+    const createRoomHandler = applyMiddleware(socket, (s, data) => handleCreateRoom(s, data, io, roomManager));
+    const joinRoomHandler   = applyMiddleware(socket, (s, data) => handleJoinRoom(s, data, io, roomManager));
+    const startGameHandler  = applyMiddleware(socket, (s, data) => handleStartGame(s, data, io, roomManager));
+    const leaveRoomHandler  = applyMiddleware(socket, (s, data) => handleLeaveRoom(s, data, io, roomManager));
+    const listRoomsHandler  = applyMiddleware(socket, (s, data) => handleRefreshRoomList(s, data, roomManager));
 
-    socket.on('create_room', (data: any) => createRoom(data));
-    socket.on('join_room', (data: any) => joinRoom(data));
-    socket.on('start_game', (data: any) => startGame(data));
-    socket.on('leave_room', (data: any) => leaveRoom(data));
-    socket.on('refresh_room_list', (data: any) => refreshRoomList(data));
+    // Timing helper that preserves argument binding
+    function time(eventName: string, fn: () => Promise<void> | void): void {
+        const end = metrics.timeSocketEvent(eventName);
+        Promise.resolve()
+            .then(() => fn())
+            .finally(() => end());
+    }
+
+    socket.on('create_room', (data: any) => time('create_room', () => createRoomHandler( data)));
+    socket.on('join_room',   (data: any) => time('join_room',   () => joinRoomHandler( data)));
+    socket.on('start_game',  (data: any) => time('start_game',  () => startGameHandler( data)));
+    socket.on('leave_room',  (data: any) => time('leave_room',  () => leaveRoomHandler( data)));
+    socket.on('refresh_room_list', (data: any) => time('refresh_room_list', () => listRoomsHandler( data)));
 }
 
 /**
@@ -328,3 +325,4 @@ async function broadcastRoomList(io: Server<ClientToServerEvents, ServerToClient
         rooms: rooms.map(serializeRoom)
     });
 }
+

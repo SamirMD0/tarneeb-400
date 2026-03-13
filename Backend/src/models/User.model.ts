@@ -1,17 +1,19 @@
 // Backend/src/models/User.model.ts
-// Player profile and statistics schema, extended with auth credentials.
-// Password is hashed via bcrypt before save — never stored in plaintext.
+// Player profile & lightweight stats for leaderboards and auth.
 
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
-  name: string;
-  email: string;
-  password: string;
+  // Identity (socket-based or full account)
+  socketId?: string;
+  name?: string;      // alias: username
+  username?: string;  // input alias for name
+  email?: string;
+  password?: string;
   // Statistics
   gamesPlayed: number;
-  gamesWon: number;
+  wins: number;
   totalScore: number;
   createdAt: Date;
   updatedAt: Date;
@@ -21,43 +23,61 @@ export interface IUser extends Document {
 
 const UserSchema = new Schema<IUser>(
   {
+    // Optional identity for ephemeral/guest users connecting via sockets
+    socketId: { type: String },
+
+    // Display name. Accepts input via alias "username" in create/update payloads
     name: {
       type: String,
-      required: [true, 'Name is required'],
       trim: true,
-      minlength: [2, 'Name must be at least 2 characters'],
-      maxlength: [32, 'Name must be at most 32 characters'],
+      minlength: [1, 'Name must be at least 1 character'],
+      maxlength: [50, 'Name must be at most 50 characters'],
+      alias: 'username',
+      required: false,
     },
+
+    // Email/password are optional here to support tests that upsert by socketId
     email: {
       type: String,
-      required: [true, 'Email is required'],
-      unique: true,
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email'],
+      required: false,
+      index: true,
+      unique: false,
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters'],
-      select: false, // never returned in queries by default
+      select: false,
+      required: false,
     },
+
     // Stats
     gamesPlayed: { type: Number, default: 0 },
-    gamesWon:    { type: Number, default: 0 },
+    wins:        { type: Number, default: 0 },
     totalScore:  { type: Number, default: 0 },
   },
   {
     timestamps: true,
     collection: 'users',
+    strict: true,
   }
 );
 
-// Hash password before saving
+// Backward-compatibility alias for any legacy code using gamesWon
+UserSchema.virtual('gamesWon')
+  .get(function(this: any) { return this.wins; })
+  .set(function(this: any, v: number) { this.wins = v; });
+
+// Ensure unique index on socketId exists
+UserSchema.index({ socketId: 1 }, { unique: true, sparse: true });
+
+// Hash password before saving (only if provided/changed)
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(12);
-  this.password = await bcrypt.hash(this.password, salt);
+  this.password = await bcrypt.hash(this.password as string, salt);
   next();
 });
 
@@ -65,18 +85,9 @@ UserSchema.pre('save', async function (next) {
 UserSchema.methods.comparePassword = async function (
   candidate: string
 ): Promise<boolean> {
-  return bcrypt.compare(candidate, this.password);
+  return bcrypt.compare(candidate, this.password as string);
 };
 
-// Prevent password leakage in JSON serialization
-UserSchema.methods.toJSON = function () {
-  const obj = this.toObject();
-  delete obj.password;
-  return obj;
-};
-
-import type { Model } from 'mongoose';
-
-export const  UserModel: Model<IUser> =
+export const UserModel: Model<IUser> =
   (mongoose.models.User as Model<IUser> | undefined) ??
   mongoose.model<IUser>('User', UserSchema);

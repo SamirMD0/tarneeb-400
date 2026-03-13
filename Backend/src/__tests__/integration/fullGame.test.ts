@@ -87,7 +87,7 @@ describe('Full Game Lifecycle', { timeout: DEFAULT_TIMEOUT * 6 }, () => {
                 const currentId = state.players[state.currentPlayerIndex].id as string;
                 const currentSocket = socketMap.get(currentId)!;
 
-                const playable = pickCard(currentSocket.id!, state);
+                const playable = pickCard(currentSocket, state);
                 assert.ok(playable, `Player ${currentId} must have a card (trick ${trick + 1}, card ${card + 1})`);
 
                 const playUpdate = waitForEvent<any>(s1, 'game_state_updated');
@@ -155,7 +155,7 @@ describe('Full Game Lifecycle', { timeout: DEFAULT_TIMEOUT * 6 }, () => {
                 const currentSocket = socketMap.get(currentPlayerId)!;
                 assert.ok(currentSocket, `Socket for player ${currentPlayerId} should exist`);
 
-                const card = pickCard(currentSocket.id!, state);
+                const card = pickCard(currentSocket, state);
                 assert.ok(card, `Player ${currentPlayerId} should have a playable card (trick ${trick + 1}, card ${cardNum + 1})`);
 
                 const playUpdate = waitForEvent<any>(s1, 'game_state_updated');

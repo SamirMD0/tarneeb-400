@@ -7,9 +7,8 @@ import { UserModel as User } from '../models/User.model.js';
 import type { RegisterRequest, LoginRequest, AuthResponse, JwtPayload } from '../types/auth.types.js';
 import { getEnv } from '../lib/env.js';
 
-const { JWT_SECRET, JWT_EXPIRES_IN } = getEnv();
-
 function signToken(userId: string, email: string): string {
+  const { JWT_SECRET, JWT_EXPIRES_IN } = getEnv();
   const payload: JwtPayload = { userId, email };
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions);
 }

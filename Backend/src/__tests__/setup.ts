@@ -1,12 +1,4 @@
 // Backend/src/__tests__/setup.ts — Phase 21: Shared test infrastructure
-// Provides environment, mock wiring, and reusable helpers for all integration tests.
-
-import { mock } from 'node:test';
-import { createServer, type Server as HTTPServer } from 'http';
-import { Server } from 'socket.io';
-import ioClient from 'socket.io-client';
-import { initializeSocketServer } from '../sockets/socketServer.js';
-import { registerHandlers } from '../sockets/socketHandlers.js';
 
 // ──────────────────────────────────────────
 // 1. Environment
@@ -19,6 +11,22 @@ process.env.CORS_ORIGIN = 'http://localhost:3000';
 process.env.LOG_ERRORS = 'false';
 process.env.EXPOSE_STACK_TRACES = 'true';
 process.env.JWT_SECRET = 'test-secret-key-minimum-32-characters-required-here';
+
+import { validateEnv } from '../lib/env.js';
+validateEnv();
+
+// Provides environment, mock wiring, and reusable helpers for all integration tests.
+
+import { mock } from 'node:test';
+import { createServer, type Server as HTTPServer } from 'http';
+import { Server } from 'socket.io';
+import ioClient from 'socket.io-client';
+import jwt from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
+import { initializeSocketServer } from '../sockets/socketServer.js';
+import { registerHandlers } from '../sockets/socketHandlers.js';
+
+
 
 // ──────────────────────────────────────────
 // 2. Module-level mocks (mongoose & redis)
@@ -99,6 +107,7 @@ export interface TestContext {
  * Call `teardownTestServer` when done.
  */
 export async function createTestServer(): Promise<TestContext> {
+    validateEnv(); 
     const httpServer = createServer();
     const io = initializeSocketServer(httpServer);
     registerHandlers(io);
@@ -125,11 +134,18 @@ export async function teardownTestServer(ctx: TestContext): Promise<void> {
 // ──────────────────────────────────────────
 
 /** Create a client socket and track it for automatic cleanup. */
-export function createTestClient(ctx: TestContext): ClientSocket {
+export function createTestClient(ctx: TestContext, userId?: string): ClientSocket {
+    const uid = userId ?? `test-user-${randomUUID()}`;
+    const token = jwt.sign(
+        { userId: uid, email: `${uid}@test.com` },
+        process.env.JWT_SECRET!
+    );
     const socket = ioClient(`http://localhost:${ctx.port}`, {
         transports: ['websocket'],
         forceNew: true,
+        auth: { token },
     });
+    (socket as any)._userId = uid;  // ← add this
     ctx.clients.push(socket);
     return socket;
 }
@@ -159,10 +175,16 @@ export async function connectClient(socket: ClientSocket): Promise<void> {
 
 /** Create a room with 4 connected sockets, return roomId + ordered sockets. */
 export async function createFullRoom(ctx: TestContext): Promise<{ roomId: string; sockets: [ClientSocket, ClientSocket, ClientSocket, ClientSocket] }> {
-    const s1 = createTestClient(ctx);
-    const s2 = createTestClient(ctx);
-    const s3 = createTestClient(ctx);
-    const s4 = createTestClient(ctx);
+    const s1 = createTestClient(ctx, 'user1');
+    const s2 = createTestClient(ctx, 'user2');
+    const s3 = createTestClient(ctx, 'user3');
+    const s4 = createTestClient(ctx, 'user4');
+
+    for (const s of [s1, s2, s3, s4]) {
+        s.on('error', (err) => {
+            console.error('\n[Test Socket Error]', err, '\n');
+        });
+    }
 
     await Promise.all([connectClient(s1), connectClient(s2), connectClient(s3), connectClient(s4)]);
 
@@ -207,13 +229,12 @@ export async function startGame(sockets: [ClientSocket, ClientSocket, ClientSock
  * - If first card in trick → play any card.
  * - Otherwise → follow lead suit if possible.
  */
-export function pickCard(socketId: string, gameState: any): { suit: string; rank: string } | undefined {
-    const player = (gameState.players as any[]).find((p) => p.id === socketId);
+export function pickCard(socket: ClientSocket, gameState: any): { suit: string; rank: string } | undefined {
+    const uid = (socket as any)._userId ?? socket.id;
+    const player = (gameState.players as any[]).find((p) => p.id === uid);
     const hand = player?.hand as any[] | undefined;
     if (!hand || hand.length === 0) return undefined;
-
     if ((gameState.trick as any[]).length === 0) return hand[0];
-
     const leadSuit = gameState.trick[0]?.suit;
     const follow = hand.find((c: any) => c.suit === leadSuit);
     return follow || hand[0];
@@ -223,5 +244,5 @@ export function pickCard(socketId: string, gameState: any): { suit: string; rank
  * Build a socket-id-to-socket map for dispatching cards to the right client.
  */
 export function buildSocketMap(sockets: ClientSocket[]): Map<string, ClientSocket> {
-    return new Map(sockets.map((s) => [s.id!, s]));
+    return new Map(sockets.map((s) => [(s as any)._userId ?? s.id!, s]));
 }

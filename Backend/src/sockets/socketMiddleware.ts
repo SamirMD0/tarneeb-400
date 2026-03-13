@@ -144,9 +144,24 @@ export function errorBoundary(handler: EventHandler): EventHandler {
  * Combined middleware wrapper
  * Applies rate limiting and error boundary to a handler
  */
-export function applyMiddleware(socket: SocketType, handler: EventHandler): EventHandler {
+export function applyMiddleware(socket: SocketType, handler: EventHandler): (data?: any) => Promise<void> {
     const rateLimit = rateLimitMiddleware(socket);
-    return errorBoundary(rateLimit(handler));
+    const inner = rateLimit(handler);
+    return async (data?: any) => {
+        try {
+            await inner(data);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            const errorCode = (error as any).code || 'INTERNAL_ERROR';
+            logger.error('[Socket Error] Handler failed', {
+                socketId: socket.id,
+                error: errorMessage,
+                code: errorCode,
+            });
+            metrics.errorOccurred(errorCode, errorCode !== 'INTERNAL_ERROR');
+            socket.emit('error', { code: errorCode, message: errorMessage });
+        }
+    };
 }
 
 /**

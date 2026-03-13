@@ -43,12 +43,12 @@ router.post(
     try {
       const body = RegisterSchema.parse(req.body);
       const result = await authService.register(body);
-      res.status(201).json({ success: true, data: result });
+      return res.status(201).json({ success: true, data: result });
     } catch (err) {
       if (err instanceof ZodError) {
         return res.status(400).json({ success: false, message: formatZodError(err) });
       }
-      next(err);
+      return next(err);
     }
   }
 );
@@ -60,12 +60,12 @@ router.post(
     try {
       const body = LoginSchema.parse(req.body);
       const result = await authService.login(body);
-      res.status(200).json({ success: true, data: result });
+      return res.status(200).json({ success: true, data: result });
     } catch (err) {
       if (err instanceof ZodError) {
         return res.status(400).json({ success: false, message: formatZodError(err) });
       }
-      next(err);
+      return next(err);
     }
   }
 );

@@ -26,9 +26,10 @@ export const CreateRoomSchema = z.object({
 
 // Join Room Payload
 export const JoinRoomSchema = z.object({
-    roomId: z.string().min(1).max(36),
+    roomId: z.string().min(1).max(100),
     playerName: z.string().min(1).max(50).optional(),
-});
+    playerId: z.string().optional(),  // ✅ Includes optional playerId for reconnects
+}).passthrough();  // ✅ Allows unknown properties without breaking validation
 
 // Game Action Schemas
 const SuitSchema = z.enum(['SPADES', 'HEARTS', 'DIAMONDS', 'CLUBS']) satisfies z.ZodType<Suit>;
@@ -136,6 +137,8 @@ export function validate<T>(
         }
     };
 }
+
+
 
 /**
  * Socket Event Validation Helper

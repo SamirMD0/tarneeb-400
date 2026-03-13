@@ -203,9 +203,9 @@ describe('Persistence – MongoDB Models', { timeout: 30_000 }, () => {
             .exec();
 
         assert.equal(board.length, 3);
-        assert.equal(board[0]!.username, 'TopPlayer');
-        assert.equal(board[1]!.username, 'MidPlayer');
-        assert.equal(board[2]!.username, 'NewPlayer');
+        assert.equal(board[0]!.name, 'TopPlayer');
+        assert.equal(board[1]!.name, 'MidPlayer');
+        assert.equal(board[2]!.name, 'NewPlayer');
     });
 
     // ── Game history queries after completion ────────────────────────────────
