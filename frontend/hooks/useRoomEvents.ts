@@ -6,6 +6,7 @@
 'use client';
 
 import { useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { getSocket } from '@/lib/socketSingleton';
 import type { RoomAction } from '@/types/room.types';
 
@@ -21,6 +22,7 @@ export function useRoomEvents({
   myPlayerId,
 }: UseRoomEventsParams): void {
   const socket = getSocket();
+  const router = useRouter();
   const stableDispatch = useCallback(dispatch, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -34,6 +36,7 @@ export function useRoomEvents({
         room: data.room,
         myPlayerId: data.myPlayerId,
       });
+      router.push(`/room/${data.roomId}`);
     }
 
     function onRoomJoined(data: Parameters<import('@/types/socket.types').ServerToClientEvents['room_joined']>[0]) {
@@ -43,6 +46,7 @@ export function useRoomEvents({
         room: data.room,
         myPlayerId: data.myPlayerId,
       });
+      router.push(`/room/${data.roomId}`);
     }
 
     function onRoomLeft(_data: Parameters<import('@/types/socket.types').ServerToClientEvents['room_left']>[0]) {
@@ -92,7 +96,7 @@ export function useRoomEvents({
     socket.on('player_reconnected', onPlayerReconnected);
     socket.on('room_list_updated', onRoomListUpdated);
     socket.on('error', onError);
-    socket.on('connect', onReconnect);
+    socket.io.on('reconnect', onReconnect);
 
     return () => {
       socket.off('room_created', onRoomCreated);
@@ -104,7 +108,7 @@ export function useRoomEvents({
       socket.off('player_reconnected', onPlayerReconnected);
       socket.off('room_list_updated', onRoomListUpdated);
       socket.off('error', onError);
-      socket.off('connect', onReconnect);
+      socket.io.off('reconnect', onReconnect);
     };
-  }, [socket, stableDispatch, roomId, myPlayerId]);
+  }, [socket, stableDispatch, roomId, myPlayerId, router]);
 }

@@ -93,12 +93,16 @@ async function handlePlayCard(
 
     // Use stable playerId derived from verified JWT set during handshake
     const playerId = socket.data.playerId || socket.data.userId;
+    if (!playerId) {
+        socket.emit('error', { code: 'UNAUTHORIZED', message: 'Player ID not found' });
+        return;
+    }
 
     const action: GameAction = {
         type: 'PLAY_CARD',
         playerId,
         card,
-    } as any;
+    };
 
     const played = room.gameEngine.dispatch(action);
     if (!played) {
@@ -120,6 +124,20 @@ async function handlePlayCard(
         if (totalTricks === 13) {
             room.gameEngine.dispatch({ type: 'END_ROUND' });
             state = room.gameEngine.getState();
+            
+            // Queue next round automatically if the game hasn't ended
+            if (!room.gameEngine.isGameOver()) {
+                const engineRef = room.gameEngine;
+                setTimeout(() => {
+                    // Guard against race: room/engine may have been destroyed during the delay
+                    if (!engineRef || engineRef.getState().phase !== 'SCORING') return;
+                    engineRef.dispatch({ type: 'START_NEXT_ROUND' });
+                    io.to(roomId).emit('game_state_updated', {
+                        roomId,
+                        gameState: sanitizeGameState(engineRef.getState()),
+                    });
+                }, 3000);
+            }
         }
     }
 

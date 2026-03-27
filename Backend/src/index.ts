@@ -66,18 +66,19 @@ app.use(preventHPP);
 
 // Phase 20: Request duration middleware with FIXED cardinality
 app.use((req, res, next) => {
-    // ✅ FIX: Use req.route?.path (bounded) instead of req.path (unbounded)
-    // req.path can be ANY user input: /users/123, /users/456, etc. = infinite cardinality
-    // req.route?.path is the Express route pattern: /users/:id = bounded cardinality
-    const route = req.route?.path || req.path.split('/').slice(0, 3).join('/') || 'unknown';
-
-    const end = httpRequestDuration.startTimer({
-        method: req.method,
-        route: route
-    });
+    // Start the timer before route handling
+    const start = process.hrtime.bigint();
 
     res.on('finish', () => {
-        end({ status_code: String(res.statusCode) });
+        // req.route is only populated AFTER the route handler runs, so we
+        // read it here in the 'finish' callback where it's available.
+        const route = req.route?.path || 'unknown';
+        const durationSec = Number(process.hrtime.bigint() - start) / 1e9;
+
+        httpRequestDuration.observe(
+            { method: req.method, route, status_code: String(res.statusCode) },
+            durationSec
+        );
     });
 
     next();

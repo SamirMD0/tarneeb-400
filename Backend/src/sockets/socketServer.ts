@@ -54,32 +54,7 @@ export function initializeSocketServer(httpServer: HTTPServer): Server<
     // Enforce JWT auth for all socket connections
     io.use(authMiddleware as any);
 
-    // Connection event
-    io.on('connection', (socket: Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>) => {
-        console.log(`[Socket] Client connected: ${socket.id}`);
-
-        // Track connection timestamp
-        socket.data.connectedAt = Date.now();
-
-        // Disconnection event
-        socket.on('disconnect', (reason) => {
-            console.log(`[Socket] Client disconnected: ${socket.id}, reason: ${reason}`);
-
-            // Cleanup: Leave all rooms
-            const rooms = Array.from(socket.rooms);
-            rooms.forEach(room => {
-                if (room !== socket.id) {
-                    socket.leave(room);
-                    console.log(`[Socket] ${socket.id} left room ${room} on disconnect`);
-                }
-            });
-        });
-
-        // Error handling
-        socket.on('error', (error) => {
-            console.error(`[Socket] Error from ${socket.id}:`, error);
-        });
-    });
+    // Removed duplicate connection block here; socketHandlers.ts owns the connection event.
 
     console.log('[Socket] Socket.IO server initialized');
     return io;

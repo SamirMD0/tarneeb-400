@@ -2,25 +2,30 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Container from './Container';
+import { useAuth } from '@/hooks/useAuth';
 
 interface NavLink {
   label: string;
   href: string;
 }
-
 const NAV_LINKS: NavLink[] = [
   { label: 'Home',  href: '/'      },
   { label: 'Lobby', href: '/lobby' },
-  { label: 'Login', href: '/login' },
 ];
 
 export default function Navbar() {
+  const [isMounted, setIsMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname   = usePathname();
   const toggleMenu = () => setMenuOpen((p) => !p);
   const closeMenu  = () => setMenuOpen(false);
+  const { user, logout } = useAuth();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <header
@@ -108,6 +113,61 @@ export default function Navbar() {
                 </li>
               );
             })}
+            
+            {(!isMounted || !user) ? (
+              <li>
+                <Link
+                  href="/login"
+                  className="relative px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400 block"
+                  style={
+                    pathname === '/login'
+                      ? {
+                          color: '#e555c7',
+                          background: 'rgba(229,85,199,0.1)',
+                          border: '1px solid rgba(229,85,199,0.25)',
+                          textShadow: '0 0 10px rgba(229,85,199,0.6)',
+                          boxShadow: '0 0 12px rgba(229,85,199,0.12)',
+                        }
+                      : {
+                          color: '#94a3b8',
+                          background: 'transparent',
+                          border: '1px solid transparent',
+                        }
+                  }
+                  onMouseEnter={(e) => {
+                    if (pathname !== '/login') {
+                      (e.currentTarget as HTMLAnchorElement).style.color = '#f0f4ff';
+                      (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.05)';
+                      (e.currentTarget as HTMLAnchorElement).style.border = '1px solid rgba(255,255,255,0.07)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (pathname !== '/login') {
+                      (e.currentTarget as HTMLAnchorElement).style.color = '#94a3b8';
+                      (e.currentTarget as HTMLAnchorElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLAnchorElement).style.border = '1px solid transparent';
+                    }
+                  }}
+                >
+                  Login
+                </Link>
+              </li>
+            ) : (
+              <li className="flex items-center gap-4 ml-4 pl-4 border-l border-[rgba(255,255,255,0.1)]">
+                <span className="text-sm font-medium text-slate-300">
+                  {user.name}
+                </span>
+                <button
+                  onClick={() => {
+                    logout();
+                    closeMenu();
+                  }}
+                  className="px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400"
+                >
+                  Logout
+                </button>
+              </li>
+            )}
           </ul>
 
           {/* ── Mobile toggle ──────────────────────────────────── */}
@@ -173,6 +233,46 @@ export default function Navbar() {
                   </li>
                 );
               })}
+
+              {(!isMounted || !user) ? (
+                <li>
+                  <Link
+                    href="/login"
+                    onClick={closeMenu}
+                    className="block px-4 py-2.5 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400"
+                    style={
+                      pathname === '/login'
+                        ? {
+                            color: '#e555c7',
+                            background: 'rgba(229,85,199,0.1)',
+                            border: '1px solid rgba(229,85,199,0.2)',
+                            textShadow: '0 0 8px rgba(229,85,199,0.5)',
+                          }
+                        : {
+                            color: '#94a3b8',
+                            border: '1px solid transparent',
+                          }
+                    }
+                  >
+                    Login
+                  </Link>
+                </li>
+              ) : (
+                <li className="flex items-center justify-between px-4 py-3 mt-2 border-t border-[rgba(255,255,255,0.1)]">
+                  <span className="text-sm font-medium text-slate-300">
+                    {user.name}
+                  </span>
+                  <button
+                    onClick={() => {
+                      logout();
+                      closeMenu();
+                    }}
+                    className="px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400"
+                  >
+                    Logout
+                  </button>
+                </li>
+              )}
             </ul>
           </div>
         )}

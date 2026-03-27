@@ -12,12 +12,7 @@ export function RoomList() {
   const router = useRouter();
   const { dispatchers, room } = useAppState();
 
-  // Navigate once a join succeeds and roomId is populated
-  useEffect(() => {
-    if (room.roomId) {
-      router.push(`/room/${room.roomId}`);
-    }
-  }, [room.roomId, router]);
+  // Navigation is now handled by useRoomEvents after state is updated
 
   // Derive visible rooms from the live room snapshot.
   // TODO: wire to a REST GET /rooms endpoint when the backend exposes it.

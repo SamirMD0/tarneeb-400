@@ -3,6 +3,7 @@
 import { Server, Socket } from 'socket.io';
 import type { ClientToServerEvents, ServerToClientEvents, SocketData, SerializedRoom, SanitizedGameState } from '../../types/socket.types.js';
 import type { RoomManager } from '../../rooms/roomManager.js';
+import type { Room } from '../../rooms/room.js';
 import type { GameState } from '../../game/state.js';
 import { applyMiddleware } from '../socketMiddleware.js';
 import { metrics } from '../../lib/metrics.js';
@@ -38,21 +39,6 @@ export function registerRoomHandlers(
     socket.on('refresh_room_list', (data: any) => time('refresh_room_list', () => listRoomsHandler( data)));
 }
 
-/**
- * Phase 20: Performance timing wrapper for socket events
- * Measures actual handler execution time
- */
-function wrapWithTiming(eventName: string, handler: any): any {
-    return async (...args: any[]) => {
-        const end = metrics.timeSocketEvent(eventName);
-        try {
-            await handler(...args);
-        } finally {
-            end();
-        }
-    };
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
@@ -68,7 +54,7 @@ function sanitizeGameState(state: Readonly<GameState>): SanitizedGameState {
  * Serialize room for client transmission.
  * Uses proper typed return instead of `any`.
  */
-function serializeRoom(room: any): SerializedRoom {
+function serializeRoom(room: Room): SerializedRoom {
     return {
         id: room.id,
         players: Array.from(room.players.values()),

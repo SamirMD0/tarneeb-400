@@ -227,7 +227,7 @@ describe('Game Reducer', () => {
   });
 
   describe('END_ROUND', () => {
-    it('should calculate scores and transition to SCORING', () => {
+    it('should calculate scores and transition to GAME_OVER if score reaches target', () => {
       const state = createTestState();
       state.phase = 'PLAYING';
       state.bidderId = 'p1';
@@ -240,9 +240,24 @@ describe('Game Reducer', () => {
 
       const next = applyAction(state, { type: 'END_ROUND' });
 
-      assert.equal(next.phase, 'SCORING');
+      // Score is 80, which is >= 41, so it transitions to GAME_OVER
+      assert.equal(next.phase, 'GAME_OVER');
       assert.equal(next.teams[1].score, initialScore1 + 80);
       assert.equal(next.teams[2].score, initialScore2 + 50);
+    });
+
+    it('should calculate scores and transition to SCORING if score is below target', () => {
+      const state = createTestState();
+      state.phase = 'PLAYING';
+      state.bidderId = 'p1';
+      state.highestBid = 7;
+      state.teams[1].tricksWon = 1; // Negative score case
+      state.teams[2].tricksWon = 0;
+
+      const next = applyAction(state, { type: 'END_ROUND' });
+
+      // Score is -70 for team 1, 0 for team 2. Neither >= 41.
+      assert.equal(next.phase, 'SCORING');
     });
 
     it('should not end round if no bidder', () => {

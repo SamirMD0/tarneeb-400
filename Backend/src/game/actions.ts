@@ -10,4 +10,5 @@ export type GameAction =
   | { type: 'PLAY_CARD'; playerId: string; card: Card }
   | { type: 'END_TRICK' }
   | { type: 'END_ROUND' }
+  | { type: 'START_NEXT_ROUND' }
   | { type: 'RESET_GAME' }

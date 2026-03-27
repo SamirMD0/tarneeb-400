@@ -27,11 +27,11 @@ export const authService = {
 
     const user = new User({ name, email, password });
     await user.save();
-    const token = signToken(String(user._id), user.email);
+    const token = signToken(String(user._id), user.email as string);
 
     return {
       token,
-      user: { id: String(user._id), name: user.name, email: user.email },
+      user: { id: String(user._id), name: user.name as string, email: user.email as string },
     };
   },
 
@@ -53,11 +53,11 @@ export const authService = {
       throw err;
     }
 
-    const token = signToken(String(user._id), user.email);
+    const token = signToken(String(user._id), user.email as string);
 
     return {
       token,
-      user: { id: String(user._id), name: user.name, email: user.email },
+      user: { id: String(user._id), name: user.name as string, email: user.email as string },
     };
   },
 };

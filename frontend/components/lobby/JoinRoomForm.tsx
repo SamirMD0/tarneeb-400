@@ -16,12 +16,7 @@ export function JoinRoomForm() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  // Navigate to room once roomId is populated by the server response
-  useEffect(() => {
-    if (room.roomId) {
-      router.push(`/room/${room.roomId}`);
-    }
-  }, [room.roomId, router]);
+  // Navigation is now handled by useRoomEvents after state is updated
 
   function validate(): FormErrors {
     const next: FormErrors = {};

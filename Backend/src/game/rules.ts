@@ -80,7 +80,7 @@ export function canPlayCard(
    ASSUMPTION:
      - trick[0] was played by currentPlayerIndex
    ========================================================= */
-export function resolveTrick(state: GameState): string | undefined {
+export function resolveTrick(state: GameState): { winnerId: string; winnerTeamId: 1 | 2 } | undefined {
   if (state.trick.length !== 4 || !state.trumpSuit) return undefined;
 
   // ADD THIS CHECK
@@ -106,10 +106,7 @@ export function resolveTrick(state: GameState): string | undefined {
     state.players[(state.trickStartPlayerIndex + winningIndex) % 4];
   if (!winner) return undefined;
 
-  // Update team tricks
-  state.teams[winner.teamId].tricksWon += 1;
-
-  return winner.id;
+  return { winnerId: winner.id, winnerTeamId: winner.teamId };
 }
 
 /* =========================================================
@@ -198,29 +195,6 @@ export function calculateScoreDeltas(
     team1: bidderTeamId === 1 ? bidderScoreDelta : defenderScoreDelta,
     team2: bidderTeamId === 2 ? bidderScoreDelta : defenderScoreDelta
   };
-}
-
-export function calculateScore(
-  state: GameState,
-  contractBid: number,
-  bidderId: string
-): void {
-  const tricksWon = {
-    1: state.teams[1].tricksWon,
-    2: state.teams[2].tricksWon
-  };
-
-  const deltas = calculateScoreDeltas(
-    contractBid,
-    bidderId,
-    tricksWon,
-    state.players as { id: string; teamId: 1 | 2 }[]
-  );
-
-  if (deltas) {
-    state.teams[1].score += deltas.team1;
-    state.teams[2].score += deltas.team2;
-  }
 }
 
 /* =========================================================

@@ -9,12 +9,14 @@ import { RoomList } from "@/components/lobby";
 import "@/styles/cards.css";
 
 export default function LobbyPage() {
-  const { dispatchers } = useAppState();
+  const { dispatchers, connection } = useAppState();
 
   useEffect(() => {
-    // Refresh room list on mount to show current available rooms
-    dispatchers.room.refreshRoomList();
-  }, [dispatchers.room]);
+    // Refresh room list once socket is connected to prevent dropped packets
+    if (connection.isConnected) {
+      dispatchers.room.refreshRoomList();
+    }
+  }, [dispatchers.room, connection.isConnected]);
 
   return (
     <main className="lobby-bg px-4 py-10 sm:px-6 lg:px-8">

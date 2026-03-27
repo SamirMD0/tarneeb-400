@@ -11,6 +11,7 @@ import {
   makeInitialConnectionState,
   resetConnectionState,
 } from '@/lib/state';
+import { tokenStorage } from '@/lib/auth';
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
 
@@ -98,6 +99,16 @@ export function useConnectionState(): UseConnectionStateReturn {
       dispatch({ type: 'DISCONNECTED' });
     }
     function onConnectError(err: Error) {
+      if (/AUTH_REQUIRED|INVALID_TOKEN/i.test(err.message)) {
+        tokenStorage.clear();
+        socket?.disconnect();
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        } else {
+          dispatch({ type: 'CONNECT_ERROR', message: err.message });
+        }
+        return;
+      }
       dispatch({ type: 'CONNECT_ERROR', message: err.message });
     }
     function onReconnectAttempt(attempt: number) {

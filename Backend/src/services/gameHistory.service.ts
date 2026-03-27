@@ -91,11 +91,11 @@ export async function getLeaderboard(limit: number = 10): Promise<LeaderboardEnt
         .exec();
 
     return players.map((p) => ({
-        userId: (p as any).socketId,
-        username: (p as any).username,
-        gamesPlayed: (p as any).gamesPlayed,
-        wins: (p as any).wins,
-        winRate: (p as any).gamesPlayed > 0 ? ((p as any).wins / (p as any).gamesPlayed) * 100 : 0,
+        userId: p.socketId,
+        username: p.username,
+        gamesPlayed: p.gamesPlayed,
+        wins: p.wins,
+        winRate: p.gamesPlayed > 0 ? (p.wins / p.gamesPlayed) * 100 : 0,
     }));
 }
 
@@ -112,8 +112,8 @@ export async function getUserStats(userId: string): Promise<{
     if (!stats) return null;
 
     return {
-        gamesPlayed: (stats as any).gamesPlayed,
-        wins: (stats as any).wins,
-        winRate: (stats as any).gamesPlayed > 0 ? ((stats as any).wins / (stats as any).gamesPlayed) * 100 : 0,
+        gamesPlayed: stats.gamesPlayed,
+        wins: stats.wins,
+        winRate: stats.gamesPlayed > 0 ? (stats.wins / stats.gamesPlayed) * 100 : 0,
     };
 }

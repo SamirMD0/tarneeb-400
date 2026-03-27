@@ -6,7 +6,7 @@ import {
   canPlayCard,
   resolveTrick,
   isBidValid,
-  calculateScore,
+  calculateScoreDeltas,
   getPlayerIndex,
 } from "./rules.js";
 import type { Suit } from "../types/game.types.js";
@@ -40,6 +40,10 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     case "BID": {
       if (state.phase !== "BIDDING") return state;
 
+      // Enforce turn order
+      const currentBidder = state.players[state.currentPlayerIndex];
+      if (!currentBidder || currentBidder.id !== action.playerId) return state;
+
       const player = state.players.find((p) => p.id === action.playerId);
       if (!player) return state;
       const teamScore = state.teams[player.teamId].score;
@@ -57,6 +61,11 @@ export function applyAction(state: GameState, action: GameAction): GameState {
 
     case "PASS": {
       if (state.phase !== "BIDDING") return state;
+
+      // Enforce turn order
+      const currentPasser = state.players[state.currentPlayerIndex];
+      if (!currentPasser || currentPasser.id !== action.playerId) return state;
+
       return { ...state, currentPlayerIndex: (state.currentPlayerIndex + 1) % 4 };
     }
 
@@ -86,6 +95,9 @@ export function applyAction(state: GameState, action: GameAction): GameState {
 
       const playerIdx = state.players.findIndex((p) => p.id === action.playerId);
       if (playerIdx === -1) return state;
+
+      // Enforce turn order
+      if (playerIdx !== state.currentPlayerIndex) return state;
 
       if (!canPlayCard(state, action.playerId, action.card)) return state;
 
@@ -120,14 +132,21 @@ export function applyAction(state: GameState, action: GameAction): GameState {
       if (state.phase !== 'PLAYING') return state;
       if (state.trick.length !== 4) return state;
 
-      const winnerId = resolveTrick(state);
-      if (!winnerId) return state;
+      const resolution = resolveTrick(state);
+      if (!resolution) return state;
 
       return {
         ...state,
         trick: [],
         trickStartPlayerIndex: undefined,
-        currentPlayerIndex: getPlayerIndex(state, winnerId),
+        currentPlayerIndex: getPlayerIndex(state, resolution.winnerId),
+        teams: {
+          ...state.teams,
+          [resolution.winnerTeamId]: {
+            ...state.teams[resolution.winnerTeamId],
+            tricksWon: state.teams[resolution.winnerTeamId].tricksWon + 1
+          }
+        }
       };
     }
 
@@ -135,23 +154,41 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     // ROUND END
     // -------------------------------
     case "END_ROUND": {
+      if (state.phase !== 'PLAYING') return state;
       if (!state.bidderId || !state.highestBid) return state;
 
-      // calculateScore mutates the state it receives, so clone the
-      // teams objects and players array before passing them in.
-      const next: GameState = {
+      const deltas = calculateScoreDeltas(
+        state.highestBid,
+        state.bidderId,
+        { 1: state.teams[1].tricksWon, 2: state.teams[2].tricksWon },
+        state.players
+      );
+      if (!deltas) return state;
+
+      const newTeam1Score = state.teams[1].score + deltas.team1;
+      const newTeam2Score = state.teams[2].score + deltas.team2;
+      const isGameOver = newTeam1Score >= 41 || newTeam2Score >= 41;
+
+      return {
         ...state,
+        phase: isGameOver ? 'GAME_OVER' as const : 'SCORING' as const,
         teams: {
-          1: { ...state.teams[1] },
-          2: { ...state.teams[2] },
+          1: { ...state.teams[1], score: newTeam1Score },
+          2: { ...state.teams[2], score: newTeam2Score },
         },
-        players: state.players.map((p) => ({ ...p })),
       };
+    }
 
-      calculateScore(next, next.highestBid!, next.bidderId!);
-
-      next.phase = "SCORING";
-      return next;
+    case 'START_NEXT_ROUND': {
+      if (state.phase !== 'SCORING') return state;
+      const nextInitial = createInitialGameState(state.players.map(p => p.id));
+      return {
+        ...nextInitial,
+        teams: {
+          1: { tricksWon: 0, score: state.teams[1].score },
+          2: { tricksWon: 0, score: state.teams[2].score }
+        }
+      };
     }
 
     case 'RESET_GAME': {

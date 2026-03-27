@@ -99,7 +99,7 @@ describe('Concurrent Rooms Load Test', { timeout: LOAD_TEST_TIMEOUT }, () => {
             for (let cardNum = 0; cardNum < 4; cardNum++) {
                 const currentId = state.players[state.currentPlayerIndex].id as string;
                 const currentSocket = socketMap.get(currentId)!;
-                const card = pickCard(currentSocket.id!, state);
+                const card = pickCard(currentSocket, state);
                 assert.ok(card, `Room ${roomIndex}: player ${currentId} must have a playable card`);
 
                 const playUpdate = waitForEvent<any>(sockets[0], 'game_state_updated');

@@ -69,6 +69,10 @@ export const EndRoundActionSchema = z.object({
     type: z.literal('END_ROUND'),
 });
 
+export const StartNextRoundActionSchema = z.object({
+    type: z.literal('START_NEXT_ROUND'),
+});
+
 export const StartBiddingActionSchema = z.object({
     type: z.literal('START_BIDDING'),
 });
@@ -84,6 +88,7 @@ export const GameActionSchema = z.discriminatedUnion('type', [
     PlayCardActionSchema,
     EndTrickActionSchema,
     EndRoundActionSchema,
+    StartNextRoundActionSchema,
     StartBiddingActionSchema,
     ResetGameActionSchema,
 ]);

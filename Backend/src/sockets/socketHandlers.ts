@@ -9,6 +9,7 @@ import type {
     SanitizedGameState
 } from '../types/socket.types.js';
 import { RoomManager } from '../rooms/roomManager.js';
+import type { Room } from '../rooms/room.js';
 import { registerAllSocketEventHandlers } from './events/index.js';
 import { cleanupSocketData } from './socketMiddleware.js';
 import type { GameAction } from '../game/actions.js';
@@ -39,7 +40,7 @@ function sanitizeGameState(state: Readonly<GameState>): SanitizedGameState {
 /**
  * Serialize room for client transmission.
  */
-function serializeRoom(room: any): SerializedRoom {
+function serializeRoom(room: Room): SerializedRoom {
     return {
         id: room.id,
         players: Array.from(room.players.values()),

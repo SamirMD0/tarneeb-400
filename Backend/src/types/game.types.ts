@@ -51,6 +51,7 @@ export type GameAction =
   | { type: 'END_TRICK' }
   | { type: 'END_ROUND' }
   | { type: 'START_BIDDING' }
+  | { type: 'START_NEXT_ROUND' }
   | { type: 'RESET_GAME' };
 
 // Phase 15: Round snapshot for game history persistence

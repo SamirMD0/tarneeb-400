@@ -2,6 +2,7 @@
 import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
 import type { ClientToServerEvents, ServerToClientEvents } from '@/types/socket.types';
+import { tokenStorage } from './auth';
 
 export type AppSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -37,6 +38,10 @@ export function getSocket(): AppSocket | null {
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
+      auth: (cb) => {
+        const token = tokenStorage.get();
+        cb({ token });
+      },
     });
   }
   return socket;

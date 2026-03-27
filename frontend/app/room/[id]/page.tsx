@@ -13,6 +13,9 @@ import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { RetryPanel } from '@/components/feedback/RetryPanel';
 import '@/styles/cards.css';
 
+let leaveRoomTimeout: NodeJS.Timeout | null = null;
+let activeMounts = 0;
+
 export default function RoomPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -23,16 +26,25 @@ export default function RoomPage() {
     if (connection.isConnected && !room.roomId) {
       dispatchers.room.joinRoom(id);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connection.isConnected, id]);
+  }, [connection.isConnected, id, room.roomId, dispatchers.room]);
 
   // Leave room on unmount (route navigation away)
   useEffect(() => {
+    activeMounts++;
+    if (leaveRoomTimeout) {
+      clearTimeout(leaveRoomTimeout);
+      leaveRoomTimeout = null;
+    }
+
     return () => {
-      dispatchers.room.leaveRoom();
+      activeMounts--;
+      if (activeMounts === 0) {
+        leaveRoomTimeout = setTimeout(() => {
+          dispatchers.room.leaveRoom();
+        }, 100);
+      }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dispatchers.room]);
 
   // ── Not connected ──────────────────────────────────────────────────────────
   if (!connection.isConnected) {

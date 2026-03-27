@@ -67,12 +67,13 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
       return { ...state, isLoading: true, error: null };
 
     case 'ROOM_JOINED':
-      // Full snapshot replacement via centralized utility, plus join-specific fields
-      return {
-        ...replaceRoomSnapshot(state, action.room),
-        roomId: action.roomId,
-        myPlayerId: action.myPlayerId,
-      };
+  return {
+    ...replaceRoomSnapshot(state, action.room),
+    roomId: action.roomId,
+    myPlayerId: action.myPlayerId,
+    isLoading: false, // ✅ explicitly clear
+    error: null,
+  };
 
     case 'ROOM_UPDATED':
       // Full snapshot replacement — delegates to centralized utility, never merge

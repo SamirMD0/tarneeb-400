@@ -235,8 +235,10 @@ describe('Full Game Lifecycle', { timeout: DEFAULT_TIMEOUT * 6 }, () => {
             state = await playAllTricks(sockets, state);
 
             // After the 13th card is played END_TRICK auto-fires, then END_ROUND
-            // auto-fires → phase becomes SCORING and scores are updated.
-            assert.equal(state.phase, 'SCORING', `Round ${roundCount} must end in SCORING`);
+            // auto-fires → phase becomes SCORING (or GAME_OVER if target reached) and scores are updated.
+            const isLastRound = state.teams[1].score >= 41 || state.teams[2].score >= 41;
+            const expectedPhase = isLastRound ? 'GAME_OVER' : 'SCORING';
+            assert.equal(state.phase, expectedPhase, `Round ${roundCount} must end in ${expectedPhase}`);
             assert.ok(Number.isInteger(state.teams[1].score), `Team 1 score must be integer after round ${roundCount}`);
             assert.ok(Number.isInteger(state.teams[2].score), `Team 2 score must be integer after round ${roundCount}`);
         }
