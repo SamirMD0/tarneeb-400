@@ -29,6 +29,7 @@ export interface UseRoomReturn {
   leaveRoom: () => void;
   startGame: () => void;
   refreshRoomList: () => void;
+  addBot: () => void;
   dispatch: React.Dispatch<RoomAction>;
 }
 
@@ -75,6 +76,11 @@ export function useRoom(): UseRoomReturn {
     socket.emit('refresh_room_list', {});
   }, [socket]);
 
+  const addBot = useCallback(() => {
+    if (!socket) return;
+    socket.emit('add_bot', {} as Record<string, never>);
+  }, [socket]);
+
   return {
     roomId: state.roomId,
     room: state.room,
@@ -88,6 +94,7 @@ export function useRoom(): UseRoomReturn {
     leaveRoom,
     startGame,
     refreshRoomList,
+    addBot,
     dispatch,
   };
 }

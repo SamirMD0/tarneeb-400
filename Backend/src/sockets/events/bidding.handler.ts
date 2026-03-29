@@ -8,6 +8,7 @@ import type { RoomManager } from '../../rooms/roomManager.js';
 import { applyMiddleware } from '../socketMiddleware.js';
 import { metrics } from '../../lib/metrics.js';
 import { PlaceBidSchema, SetTrumpSchema, validateSocketPayload } from '../../middlewares/validator.js';
+import { botManager } from '../../bot/BotManager.js';
 
 type SocketType = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
 
@@ -103,6 +104,9 @@ async function handlePlaceBid(
     }
 
     io.to(roomId).emit('game_state_updated', { roomId, gameState: sanitizeGameState(room.gameEngine.getState()) });
+
+    // Check if next player is a bot
+    botManager.handleGameStateUpdate(room, io);
 }
 
 async function handlePassBid(
@@ -144,6 +148,9 @@ async function handlePassBid(
     }
 
     io.to(roomId).emit('game_state_updated', { roomId, gameState: sanitizeGameState(room.gameEngine.getState()) });
+
+    // Check if next player is a bot
+    botManager.handleGameStateUpdate(room, io);
 }
 
 async function handleSetTrump(
@@ -187,4 +194,7 @@ async function handleSetTrump(
     }
 
     io.to(roomId).emit('game_state_updated', { roomId, gameState: sanitizeGameState(room.gameEngine.getState()) });
+
+    // Check if next player is a bot
+    botManager.handleGameStateUpdate(room, io);
 }

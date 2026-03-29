@@ -8,6 +8,7 @@ import type { RoomManager } from '../../rooms/roomManager.js';
 import { errorBoundary } from '../socketMiddleware.js';
 import { metrics } from '../../lib/metrics.js';
 import { PlayCardSchema, validateSocketPayload } from '../../middlewares/validator.js';
+import { botManager } from '../../bot/BotManager.js';
 
 type SocketType = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
 
@@ -159,6 +160,11 @@ async function handlePlayCard(
                     team2: state.teams[2].score,
                 },
             });
+            botManager.cleanupRoom(roomId);
         }
+        return;
     }
+
+    // Check if next player is a bot
+    botManager.handleGameStateUpdate(room, io);
 }

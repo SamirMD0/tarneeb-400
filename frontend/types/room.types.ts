@@ -20,6 +20,7 @@ export interface LobbyPlayer {
   id: string;
   name: string;
   isConnected: boolean;
+  isBot?: boolean;
 }
 
 // Shape returned by serializeRoom() in Backend/src/sockets/events/room.handler.ts:

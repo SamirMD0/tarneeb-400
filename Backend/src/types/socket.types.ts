@@ -26,6 +26,7 @@ export interface ClientToServerEvents {
   leave_room: (data: {}) => void;
   start_game: (data: {}) => void;
   refresh_room_list: (data: {}) => void;
+  add_bot: (data: {}) => void;
 
   // Game actions
   game_action: (data: { action: GameAction }) => void;

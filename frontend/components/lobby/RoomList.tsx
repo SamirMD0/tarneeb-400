@@ -14,19 +14,15 @@ export function RoomList() {
 
   // Navigation is now handled by useRoomEvents after state is updated
 
-  // Derive visible rooms from the live room snapshot.
-  // TODO: wire to a REST GET /rooms endpoint when the backend exposes it.
-  const rooms = room.room
-    ? [
-        {
-          id: room.room.id,
-          name: `Room ${room.room.id.slice(0, 6).toUpperCase()}`,
-          players: room.room.players.length,
-          maxPlayers: room.room.config.maxPlayers,
-          status: room.room.hasGame ? ('in-progress' as const) : ('waiting' as const),
-        },
-      ]
-    : [];
+  // ✅ use the actual available rooms from socket events
+  const rooms = room.availableRooms.map((r) => ({
+    id: r.id,
+    // Extract the ID portion after "room_" for a cleaner display name
+    name: `Room ${r.id.replace('room_', '').slice(0, 6).toUpperCase()}`,
+    players: r.players.length,
+    maxPlayers: r.config.maxPlayers,
+    status: r.hasGame ? ('in-progress' as const) : ('waiting' as const),
+  }));
 
   function handleJoin(roomId: string) {
     dispatchers.room.joinRoom(roomId);

@@ -1,5 +1,5 @@
+import { useAppState } from '@/hooks/useAppState';
 import type { SerializedRoom, LobbyPlayer } from '@/types/room.types';
-import '@/styles/cards.css';
 
 interface PlayerRosterProps {
   room: SerializedRoom;
@@ -22,6 +22,8 @@ function hexToRgb(hex: string): string {
 }
 
 export function PlayerRoster({ room }: PlayerRosterProps) {
+  const { dispatchers } = useAppState();
+
   // Pad to maxPlayers slots with nulls for empty seats
   const maxPlayers = room.config.maxPlayers;
   const slots: (LobbyPlayer | null)[] = Array.from({ length: maxPlayers }, (_, i) =>
@@ -111,7 +113,16 @@ export function PlayerRoster({ room }: PlayerRosterProps) {
                     </p>
                   </>
                 ) : (
-                  <p className="text-sm text-slate-600 italic">Empty seat</p>
+                  <div className="flex items-center justify-between w-full">
+                    <p className="text-sm text-slate-600 italic">Empty seat</p>
+                    <button
+                      type="button"
+                      onClick={() => dispatchers.room.addBot()}
+                      className="text-xs px-3 py-1.5 rounded-md bg-[#e555c7]/10 text-[#e555c7] border border-[#e555c7]/30 hover:bg-[#e555c7]/20 transition-colors font-medium shadow-[0_0_10px_rgba(229,85,199,0.1)]"
+                    >
+                      + Add Bot
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

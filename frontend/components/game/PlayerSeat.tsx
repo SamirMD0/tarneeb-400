@@ -1,4 +1,5 @@
 import "@/styles/cards.css";
+import { useAppState } from '@/hooks/useAppState';
 
 const SUIT_SYMBOLS = ["♠", "♥", "♦", "♣"] as const;
 
@@ -22,6 +23,7 @@ interface PlayerSeatProps {
 }
 
 export function PlayerSeat({ player }: PlayerSeatProps) {
+    const { dispatchers } = useAppState();
     const color = SEAT_COLORS[player.seatIndex] ?? SEAT_COLORS[0];
     const suit = SUIT_SYMBOLS[player.seatIndex] ?? "♠";
     const isEmpty = !player.username;
@@ -44,6 +46,16 @@ export function PlayerSeat({ player }: PlayerSeatProps) {
             <p className="player-seat__name">
                 {isEmpty ? "Empty" : player.username}
             </p>
+
+            {isEmpty && (
+                <button
+                    type="button"
+                    onClick={() => dispatchers.room.addBot()}
+                    className="pointer-events-auto mt-1 rounded bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white transition-colors hover:bg-white/20"
+                >
+                    + Bot
+                </button>
+            )}
 
             {!isEmpty && (
                 <p className="player-seat__tricks">

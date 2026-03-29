@@ -15,6 +15,7 @@ interface LobbyPlayer {
   id: PlayerID;
   name: string;
   isConnected: boolean;
+  isBot?: boolean;
 }
 
 export class Room {
@@ -59,7 +60,7 @@ export class Room {
     }
   }
 
-  async addPlayer(id: PlayerID, name: string): Promise<boolean> {
+  async addPlayer(id: PlayerID, name: string, isBot = false): Promise<boolean> {
     // Cannot add players once game started
     if (this.gameEngine) return false;
 
@@ -73,6 +74,7 @@ export class Room {
       id,
       name,
       isConnected: true,
+      ...(isBot ? { isBot: true } : {}),
     };
 
     this.players.set(id, player);

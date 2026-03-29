@@ -132,6 +132,7 @@ export interface RoomDispatchers {
   leaveRoom: () => void;
   startGame: () => void;
   refreshRoomList: () => void;
+  addBot: () => void;
 }
 
 export interface GameDispatchers {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import '@/styles/cards.css';
 
 export interface CardData {
@@ -16,6 +16,19 @@ const SUIT_COLORS: Record<string, string> = {
   '♣': '#55ffaa',
 };
 
+const SUIT_ORDER: Record<string, number> = {
+  '♥': 1,
+  '♦': 2,
+  '♠': 3,
+  '♣': 4,
+};
+
+const RANK_ORDER: Record<string, number> = {
+  'A': 1, 'K': 2, 'Q': 3, 'J': 4, '10': 5,
+  '9': 6, '8': 7, '7': 8, '6': 9, '5': 10,
+  '4': 11, '3': 12, '2': 13,
+};
+
 export interface HandCardsProps {
   cards: CardData[];
   onSelect?: (card: CardData) => void;
@@ -24,7 +37,16 @@ export interface HandCardsProps {
 export function HandCards({ cards, onSelect }: HandCardsProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const total = cards.length;
+  const sortedCards = useMemo(() => {
+    return [...cards].sort((a, b) => {
+      if (SUIT_ORDER[a.suit] !== SUIT_ORDER[b.suit]) {
+        return SUIT_ORDER[a.suit] - SUIT_ORDER[b.suit];
+      }
+      return (RANK_ORDER[a.rank] ?? 99) - (RANK_ORDER[b.rank] ?? 99);
+    });
+  }, [cards]);
+
+  const total = sortedCards.length;
   const maxFan = 4;
   const step = total > 1 ? (maxFan * 2) / (total - 1) : 0;
 
@@ -36,7 +58,7 @@ export function HandCards({ cards, onSelect }: HandCardsProps) {
 
   return (
     <div className="hand-cards" role="list" aria-label="Your hand">
-      {cards.map((card, i) => {
+      {sortedCards.map((card, i) => {
         const rotation = total > 1 ? -maxFan + step * i : 0;
         const color = SUIT_COLORS[card.suit] ?? '#e555c7';
         const isSelected = selectedId === card.id;

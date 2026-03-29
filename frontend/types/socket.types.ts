@@ -14,6 +14,7 @@ export interface ClientToServerEvents {
   leave_room: (data: Record<string, never>) => void;
   start_game: (data: Record<string, never>) => void;
   refresh_room_list: (data: Record<string, never>) => void;
+  add_bot: (data: Record<string, never>) => void;
 
   // Bidding — bidding.handler.ts
   place_bid: (data: { value: number }) => void;

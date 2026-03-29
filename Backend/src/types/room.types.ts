@@ -26,6 +26,7 @@ export interface LobbyPlayer {
   id: PlayerID;
   name: string;
   isConnected: boolean;
+  isBot?: boolean;
 }
 
 /**

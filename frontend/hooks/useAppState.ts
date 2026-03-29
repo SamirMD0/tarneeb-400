@@ -155,8 +155,9 @@ export function AppProvider({ children }: AppProviderProps): React.ReactNode {
       leaveRoom: roomHook.leaveRoom,
       startGame: roomHook.startGame,
       refreshRoomList: roomHook.refreshRoomList,
+      addBot: roomHook.addBot,
     }),
-    [roomHook.createRoom, roomHook.joinRoom, roomHook.leaveRoom, roomHook.startGame, roomHook.refreshRoomList]
+    [roomHook.createRoom, roomHook.joinRoom, roomHook.leaveRoom, roomHook.startGame, roomHook.refreshRoomList, roomHook.addBot]
   );
 
   const gameDispatchers: GameDispatchers = useMemo(
