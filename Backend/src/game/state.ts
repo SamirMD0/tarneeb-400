@@ -6,12 +6,12 @@ export interface PlayerState {
   id: string;
   hand: Card[];
   teamId: 1 | 2;
+  score: number;
 }
 
 // Tricks won by each team
 export interface TeamState {
   tricksWon: number;
-  score: number;
 }
 
 // Phase of the game
@@ -26,16 +26,16 @@ export interface GameState {
   players: PlayerState[];
   teams: Record<1 | 2, TeamState>;
   deck: Card[];
-  trumpSuit?: Suit;
+  trumpSuit: 'HEARTS';
+  dealerIndex: number;
   currentPlayerIndex: number;
   trickStartPlayerIndex?: number; // ADD THIS LINE
   phase: GamePhase;
   trick: Card[];
-  highestBid?: number;
-  bidderId?: string;
+  playerBids: Record<string, number>;
 }
 
-export function createInitialGameState(playerIds: string[]): GameState {
+export function createInitialGameState(playerIds: string[], initialDealerIndex = 0): GameState {
   if (playerIds.length !== 4) {
     throw new Error("Tarneeb requires exactly 4 players");
   }
@@ -50,25 +50,27 @@ export function createInitialGameState(playerIds: string[]): GameState {
   }
 
   // Assign players to teams: 1 vs 2
+  // players[] is ordered counterclockwise
   const players: PlayerState[] = playerIds.map((id, idx) => ({
     id,
     hand: hands[idx]!,
-    teamId: idx % 2 === 0 ? 1 : 2
+    teamId: idx % 2 === 0 ? 1 : 2,
+    score: 0
   }));
 
   return {
     players,
     teams: {
-      1: { tricksWon: 0, score: 0 },
-      2: { tricksWon: 0, score: 0 }
+      1: { tricksWon: 0 },
+      2: { tricksWon: 0 }
     },
     deck,                 // remaining deck if needed
-    trumpSuit: undefined,
-    currentPlayerIndex: 0, // will be set to bidder later
+    trumpSuit: 'HEARTS',
+    dealerIndex: initialDealerIndex,
+    currentPlayerIndex: (initialDealerIndex + 1) % 4, // right of dealer plays first
     phase: 'DEALING',
     trick: [],
-    highestBid: undefined,
-    bidderId: undefined
+    playerBids: {}
   };
 }
 

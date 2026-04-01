@@ -156,8 +156,8 @@ async function handlePlayCard(
                 roomId,
                 winner,
                 finalScore: {
-                    team1: state.teams[1].score,
-                    team2: state.teams[2].score,
+                    team1: Math.max(...state.players.filter(p => p.teamId === 1).map(p => p.score)),
+                    team2: Math.max(...state.players.filter(p => p.teamId === 2).map(p => p.score)),
                 },
             });
             botManager.cleanupRoom(roomId);

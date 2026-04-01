@@ -4,18 +4,16 @@ import { useState, useEffect } from 'react';
 import '@/styles/cards.css';
 
 interface BiddingPanelProps {
-  currentBid: number | null;
-  currentBidder: string | null;
+  myScore: number;
   isMyTurn: boolean;
   onBid: (value: number) => void;
   onPass: () => void;
 }
 
-const BID_VALUES = [7, 8, 9, 10, 11, 12, 13] as const;
+const BID_VALUES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const;
 
 export function BiddingPanel({
-  currentBid,
-  currentBidder,
+  myScore,
   isMyTurn,
   onBid,
   onPass,
@@ -27,7 +25,7 @@ export function BiddingPanel({
     if (!isMyTurn) setSelectedBid(null);
   }, [isMyTurn]);
 
-  const minBid = currentBid ? currentBid + 1 : 7;
+  const minBid = myScore >= 50 ? 5 : myScore >= 40 ? 4 : myScore >= 30 ? 3 : 2;
 
   function handleBid() {
     if (!selectedBid) return;
@@ -65,26 +63,8 @@ export function BiddingPanel({
         Bidding
       </h2>
 
-      {/* Current bid info */}
-      {currentBid !== null && currentBidder && (
-        <div
-          className="mb-4 rounded-lg px-3 py-2"
-          style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.06)',
-          }}
-        >
-          <p className="text-xs text-slate-500">
-            Highest bid:{' '}
-            <span className="font-bold text-slate-50">{currentBid}</span>
-            {' by '}
-            <span className="font-semibold text-slate-300">{currentBidder}</span>
-          </p>
-        </div>
-      )}
-
       {/* Bid value chips */}
-      <div className="bid-values mb-4">
+      <div className="bid-values mb-4 flex-wrap max-w-sm">
         {BID_VALUES.map((val) => {
           const isDisabled = !isMyTurn || val < minBid;
           return (
@@ -103,7 +83,7 @@ export function BiddingPanel({
       </div>
 
       {/* Action buttons */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 max-w-sm">
         <button
           type="button"
           className="glow-btn glow-btn--primary flex-1"
@@ -123,7 +103,7 @@ export function BiddingPanel({
       </div>
 
       {!isMyTurn && (
-        <p className="mt-3 text-center text-xs text-slate-600">
+        <p className="mt-3 text-sm text-slate-400">
           Waiting for other players to bid…
         </p>
       )}

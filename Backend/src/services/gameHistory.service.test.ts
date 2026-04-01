@@ -11,22 +11,22 @@ describe('gameHistory.service', () => {
     // Create a valid mock game state for testing
     const createMockGameState = (): GameState => ({
         players: [
-            { id: 'p1', hand: [], teamId: 1 },
-            { id: 'p2', hand: [], teamId: 2 },
-            { id: 'p3', hand: [], teamId: 1 },
-            { id: 'p4', hand: [], teamId: 2 },
+            { id: 'p1', hand: [], teamId: 1, score: 0 },
+            { id: 'p2', hand: [], teamId: 2, score: 0 },
+            { id: 'p3', hand: [], teamId: 1, score: 0 },
+            { id: 'p4', hand: [], teamId: 2, score: 0 },
         ],
         teams: {
-            1: { tricksWon: 5, score: 45 },
-            2: { tricksWon: 8, score: 38 },
+            1: { tricksWon: 5, },
+            2: { tricksWon: 8, },
         },
         deck: [],
-        trumpSuit: 'SPADES',
+        trumpSuit: 'HEARTS',
         currentPlayerIndex: 0,
         phase: 'GAME_OVER',
         trick: [],
-        highestBid: 7,
-        bidderId: 'p1',
+        dealerIndex: 0,
+        playerBids: {},
     });
 
     describe('saveGame', () => {
@@ -35,21 +35,21 @@ describe('gameHistory.service', () => {
 
             // saveGame requires a roomId string
             assert.ok(mockState.players.length === 4, 'Game must have 4 players');
-            assert.ok(mockState.teams[1].score >= 41 || mockState.teams[2].score >= 41,
+            assert.ok(Math.max(...mockState.players.filter(p=>p.teamId===1).map(p=>p.score)) >= 41 || Math.max(...mockState.players.filter(p=>p.teamId===2).map(p=>p.score)) >= 41,
                 'Game should be over (score >= 41)');
         });
 
         it('should have correct team scores in game state', () => {
             const mockState = createMockGameState();
 
-            assert.strictEqual(mockState.teams[1].score, 45);
-            assert.strictEqual(mockState.teams[2].score, 38);
+            assert.strictEqual(Math.max(...mockState.players.filter(p=>p.teamId===1).map(p=>p.score)), 45);
+            assert.strictEqual(Math.max(...mockState.players.filter(p=>p.teamId===2).map(p=>p.score)), 38);
         });
 
         it('should identify winner as team with higher score', () => {
             const mockState = createMockGameState();
 
-            const winner = mockState.teams[1].score > mockState.teams[2].score ? 1 : 2;
+            const winner = Math.max(...mockState.players.filter(p=>p.teamId===1).map(p=>p.score)) > Math.max(...mockState.players.filter(p=>p.teamId===2).map(p=>p.score)) ? 1 : 2;
             assert.strictEqual(winner, 1, 'Team 1 should be winner with 45 points');
         });
 

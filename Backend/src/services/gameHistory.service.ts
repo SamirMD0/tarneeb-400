@@ -23,8 +23,8 @@ export async function saveGame(
         playerIds,
         winner,
         finalScore: {
-            team1: gameState.teams[1].score,
-            team2: gameState.teams[2].score,
+            team1: Math.max(...gameState.players.filter(p => p.teamId === 1).map(p => p.score)),
+            team2: Math.max(...gameState.players.filter(p => p.teamId === 2).map(p => p.score)),
         },
         rounds,
         startedAt,

@@ -7,8 +7,7 @@
 //   2. Testability: pure input/output — no socket, no reducer, no side effects.
 //      Unit tests pass GameState fixtures and assert on DerivedGameView fields directly.
 //   3. Single responsibility: useGameState owns the store; useDerivedGameView owns
-//      the derivation. If the derivation logic changes (e.g. trump selection rule),
-//      only this file changes.
+//      the derivation.
 //
 // Rules:
 //   - No mutation of input arguments.
@@ -36,20 +35,15 @@ export interface TrickSummary {
   team2TricksWon: number;
   totalTricksPlayed: number;   // team1 + team2 (0–13 per round)
   tricksRemaining: number;     // 13 - totalTricksPlayed
-  bidValue: number | null;     // winning bid (null before bid is settled)
-  bidderTeamId: 1 | 2 | null;  // team of the bid winner (null before bid is settled)
 }
 
 // ─── Room readiness flags ──────────────────────────────────────────────────────
-// Derived from SerializedRoom in conjunction with GameState phase.
-// Components use these to gate "Start Game" button visibility and player slot rendering.
-// roomReadiness is computed separately in useAppState where both room and game are in scope.
-// This hook only computes the game-phase portion.
+// Derived from GameState phase.
 
 export interface GameReadinessFlags {
   gameIsActive: boolean;       // phase is BIDDING or PLAYING
   gameIsOver: boolean;         // phase is GAME_OVER
-  biddingIsComplete: boolean;  // trumpSuit has been set (bidding fully resolved)
+  biddingIsComplete: boolean;  // phase has moved past BIDDING (i.e. PLAYING or later)
   roundIsComplete: boolean;    // phase is SCORING
 }
 
@@ -69,8 +63,6 @@ const NULL_TRICK_SUMMARY: TrickSummary = {
   team2TricksWon: 0,
   totalTricksPlayed: 0,
   tricksRemaining: 13,
-  bidValue: null,
-  bidderTeamId: null,
 };
 
 const NULL_READINESS: GameReadinessFlags = {
@@ -80,8 +72,6 @@ const NULL_READINESS: GameReadinessFlags = {
   roundIsComplete: false,
 };
 
-const NULL_GAME_OVER: DerivedGameView['gameOver'] = null;
-
 function makeNullDerivedView(
   gameOver: DerivedGameView['gameOver']
 ): FullDerivedGameView {
@@ -90,8 +80,6 @@ function makeNullDerivedView(
     myTeamId: null,
     activePlayerId: null,
     isMyTurn: false,
-    isBidWinner: false,
-    mustSelectTrump: false,
     myHand: [],
     currentTrick: [],
     phase: null,
@@ -129,15 +117,8 @@ export function useDerivedGameView({
         ? (gs.players.find((p) => p.id === myPlayerId) ?? null)
         : null;
 
-    // ── Turn and bid derivation ────────────────────────────────────────────────
+    // ── Turn derivation ────────────────────────────────────────────────────────
     const isMyTurn: boolean = !!myPlayerId && activePlayerId === myPlayerId;
-    const isBidWinner: boolean = !!myPlayerId && gs.bidderId === myPlayerId;
-
-    // mustSelectTrump: bid is won (bidderId is set), we are the winner, we're still
-    // in BIDDING phase, and trump has not yet been set. Backend requires set_trump
-    // to advance to PLAYING — this flag gates the trump selector UI.
-    const mustSelectTrump: boolean =
-      isBidWinner && gs.phase === 'BIDDING' && !gs.trumpSuit;
 
     const myHand: Card[] = myPlayer?.hand ?? [];
     const currentTrick: Card[] = gs.trick;
@@ -147,18 +128,11 @@ export function useDerivedGameView({
     const team2TricksWon = gs.teams[2].tricksWon;
     const totalTricksPlayed = team1TricksWon + team2TricksWon;
 
-    // Determine bid winner's team by finding the bidder in players[]
-    const bidderPlayer = gs.bidderId
-      ? (gs.players.find((p) => p.id === gs.bidderId) ?? null)
-      : null;
-
     const trickSummary: TrickSummary = {
       team1TricksWon,
       team2TricksWon,
       totalTricksPlayed,
       tricksRemaining: 13 - totalTricksPlayed,
-      bidValue: gs.highestBid ?? null,
-      bidderTeamId: bidderPlayer?.teamId ?? null,
     };
 
     // ── Readiness flags ────────────────────────────────────────────────────────
@@ -167,7 +141,7 @@ export function useDerivedGameView({
     const readiness: GameReadinessFlags = {
       gameIsActive: phase === 'BIDDING' || phase === 'PLAYING',
       gameIsOver: phase === 'GAME_OVER',
-      biddingIsComplete: !!gs.trumpSuit,   // set_trump accepted → trump present
+      biddingIsComplete: phase === 'PLAYING' || phase === 'SCORING' || phase === 'GAME_OVER',
       roundIsComplete: phase === 'SCORING',
     };
 
@@ -176,8 +150,6 @@ export function useDerivedGameView({
       myTeamId: myPlayer?.teamId ?? null,
       activePlayerId,
       isMyTurn,
-      isBidWinner,
-      mustSelectTrump,
       myHand,
       currentTrick,
       phase,

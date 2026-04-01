@@ -6,7 +6,6 @@ export type GameAction =
   | { type: 'START_BIDDING' }
   | { type: 'BID'; playerId: string; value: number }
   | { type: 'PASS'; playerId: string }
-  | { type: 'SET_TRUMP'; suit: Suit }
   | { type: 'PLAY_CARD'; playerId: string; card: Card }
   | { type: 'END_TRICK' }
   | { type: 'END_ROUND' }

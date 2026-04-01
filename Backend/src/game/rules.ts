@@ -22,12 +22,12 @@ const rankOrder: Rank[] = [
 export function compareCards(
   cardA: Card,
   cardB: Card,
-  trumpSuit: Suit,
   leadSuit: Suit
 ): number {
+  const TRUMP = 'HEARTS';
   // Trump always beats non-trump
-  if (cardA.suit === trumpSuit && cardB.suit !== trumpSuit) return 1;
-  if (cardB.suit === trumpSuit && cardA.suit !== trumpSuit) return -1;
+  if (cardA.suit === TRUMP && cardB.suit !== TRUMP) return 1;
+  if (cardB.suit === TRUMP && cardA.suit !== TRUMP) return -1;
 
   // If no trump involved, lead suit wins
   if (cardA.suit === leadSuit && cardB.suit !== leadSuit) return 1;
@@ -81,7 +81,7 @@ export function canPlayCard(
      - trick[0] was played by currentPlayerIndex
    ========================================================= */
 export function resolveTrick(state: GameState): { winnerId: string; winnerTeamId: 1 | 2 } | undefined {
-  if (state.trick.length !== 4 || !state.trumpSuit) return undefined;
+  if (state.trick.length !== 4) return undefined;
 
   // ADD THIS CHECK
   if (state.trickStartPlayerIndex === undefined) return undefined;
@@ -95,7 +95,6 @@ export function resolveTrick(state: GameState): { winnerId: string; winnerTeamId
     const cmp = compareCards(
       state.trick[i] as Card,
       state.trick[winningIndex] as Card,
-      state.trumpSuit,
       leadSuit
     );
     if (cmp > 0) winningIndex = i;
@@ -121,29 +120,24 @@ export function getMinIndividualBid(playerScore: number): number {
   return 2;
 }
 
-/* Minimum total bids required based on HIGHEST team score */
+/* Minimum total bids required based on HIGHEST individual player score */
 export function getMinTotalBids(
-  team1Score: number,
-  team2Score: number
+  highestPlayerScore: number
 ): number {
-  const highest = Math.max(team1Score, team2Score);
-
-  if (highest >= 50) return 14;
-  if (highest >= 40) return 13;
-  if (highest >= 30) return 12;
+  if (highestPlayerScore >= 50) return 14;
+  if (highestPlayerScore >= 40) return 13;
+  if (highestPlayerScore >= 30) return 12;
   return 11;
 }
 
 /* Validate a single bid (called during bidding turn) */
 export function isBidValid(
   bid: number,
-  playerScore: number,
-  highestBid?: number
+  playerScore: number
 ): boolean {
   const minBid = getMinIndividualBid(playerScore);
 
   if (bid < minBid || bid > 13) return false;
-  if (highestBid !== undefined && bid <= highestBid) return false;
 
   return true;
 }
@@ -152,11 +146,10 @@ export function isBidValid(
    If false → reDeal cards */
 export function isBiddingRoundValid(
   bids: number[],
-  team1Score: number,
-  team2Score: number
+  highestPlayerScore: number
 ): boolean {
   const totalBids = bids.reduce((sum, b) => sum + b, 0);
-  const minTotal = getMinTotalBids(team1Score, team2Score);
+  const minTotal = getMinTotalBids(highestPlayerScore);
 
   return totalBids >= minTotal;
 }
@@ -164,37 +157,20 @@ export function isBiddingRoundValid(
 /* =========================================================
    ROUND SCORING
    ========================================================= */
-export function calculateScoreDeltas(
-  contractBid: number,
-  bidderId: string,
-  tricksWon: { 1: number; 2: number },
-  players: { id: string; teamId: 1 | 2 }[]
-): { team1: number; team2: number } | undefined {
-  const bidder = players.find(p => p.id === bidderId);
-  if (!bidder) return undefined;
+export function getBidPoints(bid: number, score: number): number {
+  if (bid < 2 || bid > 13) return 0;
 
-  const bidderTeamId = bidder.teamId;
-  const defenderTeamId = bidderTeamId === 1 ? 2 : 1;
-
-  const bidderTricks = tricksWon[bidderTeamId];
-  const defenderTricks = tricksWon[defenderTeamId];
-
-  let bidderScoreDelta = 0;
-
-  // Bidder team scoring
-  if (bidderTricks >= contractBid) {
-    bidderScoreDelta = bidderTricks * 10;
-  } else {
-    bidderScoreDelta = -(contractBid * 10);
-  }
-
-  // Defending team always scores their tricks
-  const defenderScoreDelta = defenderTricks * 10;
-
-  return {
-    team1: bidderTeamId === 1 ? bidderScoreDelta : defenderScoreDelta,
-    team2: bidderTeamId === 2 ? bidderScoreDelta : defenderScoreDelta
+  const below30: Record<number, number> = {
+    2:2, 3:3, 4:4, 5:10, 6:12, 7:14, 8:16, 9:27,
+    10:40, 11:40, 12:40, 13:40
   };
+
+  const above30: Record<number, number> = {
+    2:2, 3:3, 4:4, 5:5, 6:6, 7:14, 8:16, 9:27,
+    10:40, 11:40, 12:40, 13:40
+  };
+
+  return (score >= 30 ? above30 : below30)[bid] || 0;
 }
 
 /* =========================================================
@@ -205,4 +181,10 @@ export function getPlayerIndex(
   playerId: string
 ): number {
   return state.players.findIndex(p => p.id === playerId);
+}
+
+export function getNextPlayerIndex(index: number): number {
+  // players[] is ordered counterclockwise
+  // so +1 advances turn correctly
+  return (index + 1) % 4;
 }

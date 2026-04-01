@@ -343,7 +343,7 @@ describe('Persistence – Redis Room State Survival', { timeout: 20_000 }, () =>
         engine.dispatch({ type: 'PASS',      playerId: 'p2' });
         engine.dispatch({ type: 'PASS',      playerId: 'p3' });
         engine.dispatch({ type: 'PASS',      playerId: 'p4' });
-        engine.dispatch({ type: 'SET_TRUMP', suit: 'HEARTS' });
+        
 
         // Play one card to put something in the trick array
         const state = engine.getState();
@@ -364,7 +364,7 @@ describe('Persistence – Redis Room State Survival', { timeout: 20_000 }, () =>
         assert.equal(after.phase, 'PLAYING',  'Phase must be preserved');
         assert.equal(after.trick.length, 1,   'Trick array must be preserved');
         assert.equal(after.trumpSuit, 'HEARTS', 'Trump suit must be preserved');
-        assert.equal(after.highestBid, 7,      'Bid value must be preserved');
+        
 
         // 52 cards total: one in trick + 51 across hands
         const cardsInHands = after.players.reduce((sum: number, p: any) => sum + p.hand.length, 0);

@@ -196,32 +196,16 @@ export class BotManager {
     private executeBiddingTurn(room: Room, io: IOServer, botId: string, hand: Card[], state: GameState): void {
         if (!room.gameEngine) return;
 
-        // Check if bidding is done and bot is the bidder → set trump
-        if (state.bidderId === botId && state.highestBid && !state.trumpSuit) {
-            const trumpSuit = this.decideTrumpSuit(hand);
-            const action: GameAction = { type: 'SET_TRUMP', suit: trumpSuit };
-            const success = room.gameEngine.dispatch(action);
-
-            if (success) {
-                io.to(room.id).emit('game_state_updated', {
-                    roomId: room.id,
-                    gameState: sanitizeGameState(room.gameEngine.getState()),
-                });
-                // Check if next player (in PLAYING now) is also a bot
-                this.handleGameStateUpdate(room, io);
-            }
-            return;
-        }
-
         // Decide bid or pass
-        const teamScore = state.teams[state.players[state.currentPlayerIndex]!.teamId].score;
-        const bidValue = this.decideBid(hand, state.highestBid, teamScore);
+        const playerScore = state.players[state.currentPlayerIndex]!.score;
+        const bidValue = this.decideBid(hand, playerScore);
 
         let action: GameAction;
         if (bidValue !== null) {
             action = { type: 'BID', playerId: botId, value: bidValue };
         } else {
-            action = { type: 'PASS', playerId: botId };
+            // Safety fallback, though decideBid shouldn't return null anymore
+            action = { type: 'BID', playerId: botId, value: 2 };
         }
 
         const success = room.gameEngine.dispatch(action);
@@ -314,8 +298,8 @@ export class BotManager {
                     roomId: room.id,
                     winner,
                     finalScore: {
-                        team1: finalState.teams[1].score,
-                        team2: finalState.teams[2].score,
+                        team1: Math.max(...finalState.players.filter(p => p.teamId === 1).map(p => p.score)),
+                        team2: Math.max(...finalState.players.filter(p => p.teamId === 2).map(p => p.score)),
                     },
                 });
                 this.cleanupRoom(room.id);
@@ -339,7 +323,7 @@ export class BotManager {
      * - Otherwise → pass
      * - Never bid at or below current highest bid
      */
-    private decideBid(hand: Card[], highestBid: number | undefined, teamScore: number): number | null {
+    private decideBid(hand: Card[], playerScore: number): number | null {
         let strongCount = 0;
         let mediumCount = 0;
 
@@ -355,42 +339,22 @@ export class BotManager {
             targetBid = strongCount >= 7 ? 8 : 7;
         } else if (totalStrong >= 5) {
             targetBid = totalStrong >= 7 ? 6 : 5;
+        } else if (totalStrong >= 3) {
+            targetBid = 4;
+        } else if (totalStrong >= 1) {
+            targetBid = 3;
         } else {
-            return null; // pass
+            targetBid = 2; // Weakest hands bid 2 minimum
         }
 
-        // Must be higher than current highest bid
-        const minBid = (highestBid !== undefined) ? highestBid + 1 : 2;
+        // Calculate min bid based on player score securely
+        const minBid = playerScore >= 50 ? 5 : playerScore >= 40 ? 4 : playerScore >= 30 ? 3 : 2;
 
-        if (targetBid < minBid) {
-            return null; // can't outbid, pass
-        }
-
-        // Clamp to valid range
+        // Clamp to valid range. Bots are required to bid at least their minimum threshold.
         const bid = Math.max(targetBid, minBid);
-        if (bid > 13) return null;
+        if (bid > 13) return 13;
 
         return bid;
-    }
-
-    /**
-     * Pick the suit with the most cards in hand as trump.
-     */
-    private decideTrumpSuit(hand: Card[]): Suit {
-        const suitCounts: Record<string, number> = {};
-        for (const card of hand) {
-            suitCounts[card.suit] = (suitCounts[card.suit] || 0) + 1;
-        }
-
-        let bestSuit: Suit = 'SPADES';
-        let bestCount = 0;
-        for (const [suit, count] of Object.entries(suitCounts)) {
-            if (count > bestCount) {
-                bestCount = count;
-                bestSuit = suit as Suit;
-            }
-        }
-        return bestSuit;
     }
 
     /**
@@ -406,7 +370,7 @@ export class BotManager {
         if (hand.length === 0) return null;
 
         const trick = state.trick;
-        const trumpSuit = state.trumpSuit;
+        const trumpSuit = 'HEARTS';
 
         // ── Leading the trick ──
         if (trick.length === 0) {
@@ -420,7 +384,7 @@ export class BotManager {
         if (suitCards.length > 0) {
             // Must follow suit
             // Check if we can beat the current best card in the trick
-            const bestInTrick = this.bestTrickCard(trick, trumpSuit!, leadSuit);
+            const bestInTrick = this.bestTrickCard(trick, leadSuit);
 
             // Try to win: play highest card of suit that beats current best
             const winners = suitCards.filter(c => {
@@ -445,14 +409,12 @@ export class BotManager {
         }
 
         // ── Can't follow suit ──
-        if (trumpSuit) {
-            const trumpCards = hand.filter(c => c.suit === trumpSuit);
-            const trickHasTrump = trick.some(c => c.suit === trumpSuit);
+        const trumpCards = hand.filter(c => c.suit === trumpSuit);
+        const trickHasTrump = trick.some(c => c.suit === trumpSuit);
 
-            if (trumpCards.length > 0 && !trickHasTrump) {
-                // Play lowest trump to win
-                return this.lowestCard(trumpCards);
-            }
+        if (trumpCards.length > 0 && !trickHasTrump) {
+            // Play lowest trump to win
+            return this.lowestCard(trumpCards);
         }
 
         // Play lowest card overall (discard)
@@ -472,8 +434,9 @@ export class BotManager {
     /**
      * Find the card currently winning the trick.
      */
-    private bestTrickCard(trick: Card[], trumpSuit: Suit, leadSuit: Suit): Card {
+    private bestTrickCard(trick: Card[], leadSuit: Suit): Card {
         let best = trick[0]!;
+        const trumpSuit = 'HEARTS';
         for (let i = 1; i < trick.length; i++) {
             const card = trick[i]!;
             // Trump beats non-trump

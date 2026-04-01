@@ -50,11 +50,6 @@ export const PassActionSchema = z.object({
     playerId: z.string(),
 });
 
-export const SetTrumpActionSchema = z.object({
-    type: z.literal('SET_TRUMP'),
-    suit: SuitSchema,
-});
-
 export const PlayCardActionSchema = z.object({
     type: z.literal('PLAY_CARD'),
     playerId: z.string(),
@@ -84,7 +79,6 @@ export const ResetGameActionSchema = z.object({
 export const GameActionSchema = z.discriminatedUnion('type', [
     BidActionSchema,
     PassActionSchema,
-    SetTrumpActionSchema,
     PlayCardActionSchema,
     EndTrickActionSchema,
     EndRoundActionSchema,
@@ -96,10 +90,6 @@ export const GameActionSchema = z.discriminatedUnion('type', [
 // Socket Event Schemas
 export const PlaceBidSchema = z.object({
     value: z.number().int().min(2).max(13),
-});
-
-export const SetTrumpSchema = z.object({
-    suit: SuitSchema,
 });
 
 export const PlayCardSchema = z.object({

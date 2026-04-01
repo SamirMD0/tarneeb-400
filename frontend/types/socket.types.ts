@@ -19,7 +19,6 @@ export interface ClientToServerEvents {
   // Bidding — bidding.handler.ts
   place_bid: (data: { value: number }) => void;
   pass_bid: (data: Record<string, never>) => void;
-  set_trump: (data: { suit: string }) => void;
 
   // Playing — playing.handler.ts
   play_card: (data: { card: { suit: string; rank: string } }) => void;

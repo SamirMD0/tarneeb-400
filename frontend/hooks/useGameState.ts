@@ -79,8 +79,6 @@ export function useGameState(myPlayerId: string | null): UseGameStateReturn {
         myTeamId: null,
         activePlayerId: null,
         isMyTurn: false,
-        isBidWinner: false,
-        mustSelectTrump: false,
         myHand: [],
         currentTrick: [],
         phase: null,
@@ -92,17 +90,12 @@ export function useGameState(myPlayerId: string | null): UseGameStateReturn {
     const activePlayerId = activePlayer?.id ?? null;
     const myPlayer = gs.players.find((p) => p.id === myPlayerId) ?? null;
     const isMyTurn = !!myPlayerId && activePlayerId === myPlayerId;
-    const isBidWinner = !!myPlayerId && gs.bidderId === myPlayerId;
-    const mustSelectTrump =
-      isBidWinner && gs.phase === 'BIDDING' && !gs.trumpSuit;
 
     return {
       myPlayer,
       myTeamId: myPlayer?.teamId ?? null,
       activePlayerId,
       isMyTurn,
-      isBidWinner,
-      mustSelectTrump,
       myHand: myPlayer?.hand ?? [],
       currentTrick: gs.trick,
       phase: gs.phase,

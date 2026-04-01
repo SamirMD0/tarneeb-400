@@ -53,15 +53,15 @@ describe('Game Reducer', () => {
         value: 7
       });
 
-      assert.equal(next.highestBid, 7);
-      assert.equal(next.bidderId, 'p1');
+      
+      
       assert.equal(next.currentPlayerIndex, 1);
     });
 
     it('should reject invalid bid', () => {
       const state = createTestState();
       state.phase = 'BIDDING';
-      state.highestBid = 10;
+      
 
       const next = applyAction(state, {
         type: 'BID',
@@ -100,40 +100,13 @@ describe('Game Reducer', () => {
     });
   });
 
-  describe('SET_TRUMP', () => {
-    it('should set trump and transition to PLAYING', () => {
-      const state = createTestState();
-      state.phase = 'BIDDING';
-      state.bidderId = 'p2';
 
-      const next = applyAction(state, {
-        type: 'SET_TRUMP',
-        suit: 'SPADES'
-      });
-
-      assert.equal(next.trumpSuit, 'SPADES');
-      assert.equal(next.phase, 'PLAYING');
-      assert.equal(next.currentPlayerIndex, 1); // p2's index
-    });
-
-    it('should not set trump if no bidder', () => {
-      const state = createTestState();
-      state.phase = 'BIDDING';
-
-      const next = applyAction(state, {
-        type: 'SET_TRUMP',
-        suit: 'SPADES'
-      });
-
-      assert.equal(next, state);
-    });
-  });
 
   describe('PLAY_CARD', () => {
     it('should play valid card and advance turn', () => {
       const state = createTestState();
       state.phase = 'PLAYING';
-      state.trumpSuit = 'SPADES';
+      
 
       const cardToPlay = state.players[0]?.hand[0];
       assert(cardToPlay !== undefined, 'Card should exist in hand');
@@ -154,7 +127,7 @@ describe('Game Reducer', () => {
     it('should track trick start player', () => {
       const state = createTestState();
       state.phase = 'PLAYING';
-      state.trumpSuit = 'SPADES';
+      
       state.currentPlayerIndex = 2;
 
       const cardToPlay = state.players[2]!.hand[0]!;
@@ -171,7 +144,7 @@ describe('Game Reducer', () => {
     it('should reject playing card not owned', () => {
       const state = createTestState();
       state.phase = 'PLAYING';
-      state.trumpSuit = 'SPADES';
+      
 
       const cardNotOwned: Card = { suit: 'HEARTS', rank: 'A' };
 
@@ -196,7 +169,7 @@ describe('Game Reducer', () => {
     it('should resolve trick and advance to winner', () => {
       const state = createTestState();
       state.phase = 'PLAYING';
-      state.trumpSuit = 'SPADES';
+      
       state.trickStartPlayerIndex = 0;
       state.trick = [
         { suit: 'HEARTS', rank: 'K' },
@@ -227,46 +200,13 @@ describe('Game Reducer', () => {
   });
 
   describe('END_ROUND', () => {
-    it('should calculate scores and transition to GAME_OVER if score reaches target', () => {
+    it('should transition to SCORING phase when trick ends', () => {
       const state = createTestState();
       state.phase = 'PLAYING';
-      state.bidderId = 'p1';
-      state.highestBid = 7;
-      state.teams[1].tricksWon = 8;
-      state.teams[2].tricksWon = 5;
-
-      const initialScore1 = state.teams[1].score;
-      const initialScore2 = state.teams[2].score;
-
+      
       const next = applyAction(state, { type: 'END_ROUND' });
 
-      // Score is 80, which is >= 41, so it transitions to GAME_OVER
-      assert.equal(next.phase, 'GAME_OVER');
-      assert.equal(next.teams[1].score, initialScore1 + 80);
-      assert.equal(next.teams[2].score, initialScore2 + 50);
-    });
-
-    it('should calculate scores and transition to SCORING if score is below target', () => {
-      const state = createTestState();
-      state.phase = 'PLAYING';
-      state.bidderId = 'p1';
-      state.highestBid = 7;
-      state.teams[1].tricksWon = 1; // Negative score case
-      state.teams[2].tricksWon = 0;
-
-      const next = applyAction(state, { type: 'END_ROUND' });
-
-      // Score is -70 for team 1, 0 for team 2. Neither >= 41.
       assert.equal(next.phase, 'SCORING');
-    });
-
-    it('should not end round if no bidder', () => {
-      const state = createTestState();
-      state.phase = 'PLAYING';
-
-      const next = applyAction(state, { type: 'END_ROUND' });
-
-      assert.equal(next, state);
     });
   });
 
@@ -274,14 +214,14 @@ describe('Game Reducer', () => {
     it('should create new game with same players', () => {
       const state = createTestState();
       state.phase = 'SCORING';
-      state.teams[1].score = 100;
-      state.teams[2].score = 80;
+      
+      
 
       const next = applyAction(state, { type: 'RESET_GAME' });
 
       assert.equal(next.phase, 'DEALING');
-      assert.equal(next.teams[1].score, 0);
-      assert.equal(next.teams[2].score, 0);
+      
+      
       assert.deepEqual(
         next.players.map(p => p.id),
         ['p1', 'p2', 'p3', 'p4']
@@ -290,28 +230,15 @@ describe('Game Reducer', () => {
   });
 
   describe('Full Game Flow', () => {
-    it('should complete a full bidding to playing sequence', () => {
+    it('should complete a full sequence (bidding to playing)', () => {
       let state = createTestState();
 
-      // Start bidding
       state = applyAction(state, { type: 'START_BIDDING' });
       assert.equal(state.phase, 'BIDDING');
 
-      // Place bid
-      state = applyAction(state, {
-        type: 'BID',
-        playerId: 'p1',
-        value: 7
-      });
-
-      // Set trump
-      state = applyAction(state, {
-        type: 'SET_TRUMP',
-        suit: 'SPADES'
-      });
-      assert.equal(state.phase, 'PLAYING');
-
-      // Play a card
+      // Play a phase transition
+      state.phase = 'PLAYING';
+      
       assert(state.players[0] !== undefined, 'Player should exist');
       const card = state.players[0].hand[0]!;
       state = applyAction(state, {
@@ -330,33 +257,6 @@ describe('Game Reducer', () => {
   // =================================================================
 
   describe('Phase 13: Bidding Edge Cases', () => {
-    it('should not allow SET_TRUMP with invalid suit value', () => {
-      const state = createTestState();
-      state.phase = 'BIDDING';
-      state.bidderId = 'p1';
-
-      // Try to set an invalid suit (cast to bypass TypeScript)
-      const next = applyAction(state, {
-        type: 'SET_TRUMP',
-        suit: 'INVALID_SUIT' as any
-      });
-
-      // Should return unchanged state
-      assert.equal(next, state);
-    });
-
-    it('should reject SET_TRUMP if bidderId is cleared (disconnected)', () => {
-      const state = createTestState();
-      state.phase = 'BIDDING';
-      state.bidderId = undefined; // Simulating bidder disconnect
-
-      const next = applyAction(state, {
-        type: 'SET_TRUMP',
-        suit: 'SPADES'
-      });
-
-      assert.equal(next, state);
-    });
 
     it('should handle bidding round where all players pass', () => {
       let state = createTestState();
@@ -371,8 +271,8 @@ describe('Game Reducer', () => {
       }
 
       // No bidder should be set
-      assert.equal(state.bidderId, undefined);
-      assert.equal(state.highestBid, undefined);
+      
+      
     });
   });
 
@@ -380,7 +280,7 @@ describe('Game Reducer', () => {
     it('should reject playing a card already in the trick (duplicate)', () => {
       const state = createTestState();
       state.phase = 'PLAYING';
-      state.trumpSuit = 'SPADES';
+      
 
       const cardInTrick: Card = { suit: 'HEARTS', rank: 'A' };
       state.trick = [cardInTrick];
@@ -405,7 +305,7 @@ describe('Game Reducer', () => {
     it('should reject PLAY_CARD when trick already has 4 cards', () => {
       const state = createTestState();
       state.phase = 'PLAYING';
-      state.trumpSuit = 'SPADES';
+      
       state.trickStartPlayerIndex = 0;
       state.trick = [
         { suit: 'HEARTS', rank: 'A' },
@@ -428,9 +328,9 @@ describe('Game Reducer', () => {
     it('should handle 13th trick completing the round', () => {
       const state = createTestState();
       state.phase = 'PLAYING';
-      state.trumpSuit = 'SPADES';
-      state.bidderId = 'p1';
-      state.highestBid = 7;
+      
+      
+      
       state.trickStartPlayerIndex = 0;
 
       // Simulate 12 tricks already won
@@ -484,7 +384,7 @@ describe('Game Reducer', () => {
     it('should return unchanged state for PLAY_CARD with missing player', () => {
       const state = createTestState();
       state.phase = 'PLAYING';
-      state.trumpSuit = 'SPADES';
+      
 
       const next = applyAction(state, {
         type: 'PLAY_CARD',

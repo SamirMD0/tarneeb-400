@@ -6,7 +6,6 @@ import { PlayerSeat, type PlayerSeatData } from './PlayerSeat';
 import { HandCards } from './HandCards';
 import { TrickArea, type TrickCard } from './TrickArea';
 import { BiddingPanel } from './BiddingPanel';
-import { TrumpSelector } from './TrumpSelector';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import type { Card, Suit } from '@/types/game.types';
@@ -43,15 +42,22 @@ export function GameBoard() {
       : players.slice(0, 4);
 
   const activePlayerId = derived.activePlayerId;
+  const isBiddingPhase = derived.phase === 'BIDDING';
 
   const seats: (PlayerSeatData | null)[] = Array.from({ length: 4 }, (_, i) => {
     const p = rotated[i];
     if (!p) return null;
+    
+    // playerBids only exist in the current round, if it's bidding or we are tracking current round bids
+    const currentBid = game.gameState?.playerBids?.[p.id];
+    
     return {
       id: p.id,
       username:
         room.room?.players.find((lp) => lp.id === p.id)?.name ?? p.id.slice(0, 6),
       tricksWon: game.gameState?.teams[p.teamId]?.tricksWon ?? 0,
+      score: p.score ?? 0, // from PlayerState, individual score
+      currentBid: currentBid,
       isActive: p.id === activePlayerId,
       seatIndex: i,
     };
@@ -80,14 +86,7 @@ export function GameBoard() {
 
   const phase = derived.phase;
   const isPlaying = phase === 'PLAYING';
-  const isBidding = phase === 'BIDDING' && !derived.mustSelectTrump;
-  const isTrumpSelection = phase === 'BIDDING' && derived.mustSelectTrump;
-
-  const currentBid = game.gameState?.highestBid ?? null;
-  const currentBidder =
-    game.gameState?.bidderId != null
-      ? room.room?.players.find((p) => p.id === game.gameState?.bidderId)?.name ?? null
-      : null;
+  const showHandCards = phase === 'PLAYING' || phase === 'BIDDING';
 
   return (
     <div className="flex flex-col gap-6">
@@ -112,7 +111,7 @@ export function GameBoard() {
           aria-hidden="true"
         />
 
-        <div className="game-table">
+        <div className="game-table flex-1 min-h-[400px]">
           <div className="game-table__top">
             {top ? <PlayerSeat player={top} /> : <EmptySeat index={0} />}
           </div>
@@ -120,7 +119,18 @@ export function GameBoard() {
             {left ? <PlayerSeat player={left} /> : <EmptySeat index={3} />}
           </div>
           <div className="game-table__center">
-            <TrickArea cards={trickCards} />
+            {isBiddingPhase ? (
+              <div className="flex items-center justify-center">
+                <BiddingPanel
+                  myScore={derived.myPlayer?.score ?? 0}
+                  isMyTurn={derived.isMyTurn}
+                  onBid={(value) => dispatchers.game.placeBid(value)}
+                  onPass={() => dispatchers.game.passBid()}
+                />
+              </div>
+            ) : (
+              <TrickArea cards={trickCards} />
+            )}
           </div>
           <div className="game-table__right">
             {right ? <PlayerSeat player={right} /> : <EmptySeat index={1} />}
@@ -132,34 +142,16 @@ export function GameBoard() {
       </div>
 
       {/* Local player's hand */}
-      {isPlaying && (
+      {showHandCards && (
         <HandCards
           cards={handCards}
           onSelect={(card) => {
+            if (!isPlaying) return;
             const original = derived.myHand.find(
               (c) => SUIT_SYMBOLS[c.suit] === card.suit && c.rank === card.rank,
             );
             if (original) dispatchers.game.playCard(original);
           }}
-        />
-      )}
-
-      {/* Bidding panel */}
-      {isBidding && (
-        <BiddingPanel
-          currentBid={currentBid ?? null}
-          currentBidder={currentBidder}
-          isMyTurn={derived.isMyTurn}
-          onBid={(value) => dispatchers.game.placeBid(value)}
-          onPass={() => dispatchers.game.passBid()}
-        />
-      )}
-
-      {/* Trump selector */}
-      {isTrumpSelection && (
-        <TrumpSelector
-          isActive={derived.mustSelectTrump}
-          onConfirm={(suit) => dispatchers.game.selectTrump(suit as Suit)}
         />
       )}
     </div>
@@ -170,6 +162,8 @@ function EmptySeat({ index }: { index: number }) {
   const data: PlayerSeatData = {
     id: `empty-${index}`,
     username: null,
+    score: 0,
+    currentBid: undefined,
     tricksWon: 0,
     isActive: false,
     seatIndex: index,

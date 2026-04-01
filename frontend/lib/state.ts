@@ -138,7 +138,6 @@ export interface RoomDispatchers {
 export interface GameDispatchers {
   placeBid: (value: number) => void;
   passBid: () => void;
-  selectTrump: (suit: import('@/types/game.types').Suit) => void;
   playCard: (card: import('@/types/game.types').Card) => void;
 }
 

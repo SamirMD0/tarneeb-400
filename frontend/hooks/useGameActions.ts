@@ -8,7 +8,7 @@
 
 import { useCallback } from 'react';
 import { getSocket } from '@/lib/socketSingleton';
-import type { DerivedGameView, Suit, Card } from '@/types/game.types';
+import type { DerivedGameView, Card } from '@/types/game.types';
 import type { GameStateAction } from '@/hooks/useGameState';
 
 interface UseGameActionsParams {
@@ -19,7 +19,6 @@ interface UseGameActionsParams {
 export interface UseGameActionsReturn {
   placeBid: (value: number) => void;
   passBid: () => void;
-  selectTrump: (suit: Suit) => void;
   playCard: (card: Card) => void;
 }
 
@@ -46,16 +45,6 @@ export function useGameActions({
     socket.emit('pass_bid', {});
   }, [socket, dispatch, derived.isMyTurn, derived.phase]);
 
-  const selectTrump = useCallback(
-    (suit: Suit) => {
-      if (!socket) return;
-      if (!derived.mustSelectTrump) return;
-      dispatch({ type: 'CLEAR_ERROR' });
-      socket.emit('set_trump', { suit });
-    },
-    [socket, dispatch, derived.mustSelectTrump]
-  );
-
   const playCard = useCallback(
     (card: Card) => {
       if (!socket) return;
@@ -66,5 +55,5 @@ export function useGameActions({
     [socket, dispatch, derived.isMyTurn, derived.phase]
   );
 
-  return { placeBid, passBid, selectTrump, playCard };
+  return { placeBid, passBid, playCard };
 }

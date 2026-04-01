@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAppState } from '@/hooks/useAppState';
 import { RoomHeader } from '@/components/room/RoomHeader';
@@ -22,8 +22,18 @@ export default function RoomPage() {
   const { dispatchers, room, game, connection } = useAppState();
 
   // Emit join_room when connected and not yet in a room
+  // Use a ref to prevent re-joining automatically if the state drops to null
+  // (e.g., when intentionally leaving the room, before the route unmounts)
+  const hasAttemptedJoin = useRef(false);
+
   useEffect(() => {
-    if (connection.isConnected && !room.roomId) {
+    if (!connection.isConnected) {
+      hasAttemptedJoin.current = false;
+      return;
+    }
+
+    if (!room.roomId && !hasAttemptedJoin.current) {
+      hasAttemptedJoin.current = true;
       dispatchers.room.joinRoom(id);
     }
   }, [connection.isConnected, id, room.roomId, dispatchers.room]);

@@ -14,6 +14,8 @@ export interface PlayerSeatData {
     id: string;
     username: string | null;
     tricksWon: number;
+    score: number;
+    currentBid: number | undefined;
     isActive: boolean;
     seatIndex: number;
 }
@@ -58,9 +60,19 @@ export function PlayerSeat({ player }: PlayerSeatProps) {
             )}
 
             {!isEmpty && (
-                <p className="player-seat__tricks">
-                    {player.tricksWon} trick{player.tricksWon !== 1 ? "s" : ""}
-                </p>
+                <div className="flex flex-col items-center">
+                    <p className="player-seat__tricks">
+                        {player.tricksWon} trick{player.tricksWon !== 1 ? "s" : ""}
+                    </p>
+                    <p className="text-[10px] text-white/70">
+                        Score: {player.score}
+                    </p>
+                    {player.currentBid !== undefined && (
+                        <p className="mt-0.5 text-xs font-bold text-yellow-300 drop-shadow-md">
+                            {player.currentBid === 0 ? "Pass" : `Bid: ${player.currentBid}`}
+                        </p>
+                    )}
+                </div>
             )}
         </div>
     );

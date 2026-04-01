@@ -97,19 +97,19 @@ export class GameEngine {
             this.notifyListeners();
 
             // Track round snapshots for history
-            if (action.type === 'END_ROUND' && prevState.bidderId && prevState.highestBid && prevState.trumpSuit) {
+            if (action.type === 'END_ROUND') {
                 this.rounds.push({
                     roundNumber: this.currentRoundNumber++,
-                    bidderId: prevState.bidderId,
-                    bidValue: prevState.highestBid,
+                    bidderId: 'all', // Hack to satisfy type if it demands string
+                    bidValue: 0, 
                     trumpSuit: prevState.trumpSuit,
                     tricksWon: {
                         team1: prevState.teams[1].tricksWon,
                         team2: prevState.teams[2].tricksWon,
                     },
                     scoreDeltas: {
-                        team1: this.state.teams[1].score - prevState.teams[1].score,
-                        team2: this.state.teams[2].score - prevState.teams[2].score,
+                        team1: this.state.players.filter(p=>p.teamId===1).map(p=>p.score).reduce((a,b)=>a+b,0) - prevState.players.filter(p=>p.teamId===1).map(p=>p.score).reduce((a,b)=>a+b,0),
+                        team2: this.state.players.filter(p=>p.teamId===2).map(p=>p.score).reduce((a,b)=>a+b,0) - prevState.players.filter(p=>p.teamId===2).map(p=>p.score).reduce((a,b)=>a+b,0),
                     },
                 });
             }
@@ -136,24 +136,27 @@ export class GameEngine {
     }
 
     public isGameOver(): boolean {
-        const { 1: team1, 2: team2 } = this.state.teams;
-        return team1.score >= 41 || team2.score >= 41;
+        for (const player of this.state.players) {
+            if (player.score >= 41) {
+                // Check partner's score > 0
+                const partner = this.state.players.find(
+                    p => p.teamId === player.teamId && p.id !== player.id
+                );
+                if (partner && partner.score > 0) return true;
+            }
+        }
+        return false;
     }
 
     public getWinner(): 1 | 2 | undefined {
-        if (!this.isGameOver()) return undefined;
-
-        const { 1: team1, 2: team2 } = this.state.teams;
-
-        if (team1.score > team2.score) return 1;
-        if (team2.score > team1.score) return 2;
-
-        // Tie-breaker: If scores are equal, the bidding team wins
-        if (this.state.bidderId) {
-            const bidder = this.state.players.find(p => p.id === this.state.bidderId);
-            if (bidder) return bidder.teamId;
+        for (const player of this.state.players) {
+            if (player.score >= 41) {
+                const partner = this.state.players.find(
+                    p => p.teamId === player.teamId && p.id !== player.id
+                );
+                if (partner && partner.score > 0) return player.teamId;
+            }
         }
-
         return undefined;
     }
 

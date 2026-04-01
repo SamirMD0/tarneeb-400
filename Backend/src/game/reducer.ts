@@ -6,18 +6,14 @@ import {
   canPlayCard,
   resolveTrick,
   isBidValid,
-  calculateScoreDeltas,
+  getBidPoints,
   getPlayerIndex,
+  getMinTotalBids,
+  getNextPlayerIndex
 } from "./rules.js";
-import type { Suit } from "../types/game.types.js";
+import { createDeck, shuffleDeck } from "./deck.js";
 // Phase 19: Zod validation
 import { GameActionSchema } from "../middlewares/validator.js";
-
-// Phase 13: Valid suit validation helper
-const VALID_SUITS: Suit[] = ['SPADES', 'HEARTS', 'DIAMONDS', 'CLUBS'];
-function isValidSuit(suit: unknown): suit is Suit {
-  return typeof suit === 'string' && VALID_SUITS.includes(suit as Suit);
-}
 
 export function applyAction(state: GameState, action: GameAction): GameState {
   // Phase 19: Validate action with Zod before processing
@@ -33,54 +29,65 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     // -------------------------------
     case "START_BIDDING": {
       if (state.phase !== "DEALING") return state;
-      // Only primitives change — shallow spread is sufficient
-      return { ...state, phase: "BIDDING" as const, currentPlayerIndex: 0 };
-    }
-
-    case "BID": {
-      if (state.phase !== "BIDDING") return state;
-
-      // Enforce turn order
-      const currentBidder = state.players[state.currentPlayerIndex];
-      if (!currentBidder || currentBidder.id !== action.playerId) return state;
-
-      const player = state.players.find((p) => p.id === action.playerId);
-      if (!player) return state;
-      const teamScore = state.teams[player.teamId].score;
-
-      if (!isBidValid(action.value, teamScore, state.highestBid)) return state;
-
-      // Only primitives change — no array/object mutations needed
-      return {
-        ...state,
-        highestBid: action.value,
-        bidderId: action.playerId,
-        currentPlayerIndex: (state.currentPlayerIndex + 1) % 4,
+      // Right of dealer plays first
+      return { 
+        ...state, 
+        phase: "BIDDING" as const, 
+        currentPlayerIndex: getNextPlayerIndex(state.dealerIndex) 
       };
     }
 
+    case "BID":
     case "PASS": {
       if (state.phase !== "BIDDING") return state;
 
-      // Enforce turn order
-      const currentPasser = state.players[state.currentPlayerIndex];
-      if (!currentPasser || currentPasser.id !== action.playerId) return state;
+      const currentPlayer = state.players[state.currentPlayerIndex];
+      if (!currentPlayer || currentPlayer.id !== action.playerId) return state;
 
-      return { ...state, currentPlayerIndex: (state.currentPlayerIndex + 1) % 4 };
-    }
+      let bidValue = 0;
+      if (action.type === "BID") {
+         if (!isBidValid(action.value, currentPlayer.score)) return state;
+         bidValue = action.value;
+      }
 
-    case "SET_TRUMP": {
-      if (state.phase !== "BIDDING") return state;
-      if (!state.bidderId) return state;
+      const nextPlayerBids = { ...state.playerBids, [action.playerId]: bidValue };
+      const bidsCount = Object.keys(nextPlayerBids).length;
 
-      // Phase 13: Validate suit is valid
-      if (!isValidSuit(action.suit)) return state;
+      if (bidsCount === 4) {
+          const totalBids = Object.values(nextPlayerBids).reduce((a, b) => a + b, 0);
+          const highestPlayerScore = Math.max(...state.players.map(p => p.score));
+
+          if (totalBids < getMinTotalBids(highestPlayerScore)) {
+              // REDEAL
+              const newDeck = shuffleDeck(createDeck(), Math.random);
+              const newPlayers = state.players.map((p, i) => ({
+                  ...p,
+                  hand: newDeck.slice(i * 13, (i + 1) * 13)
+              }));
+              return {
+                  ...state,
+                  players: newPlayers,
+                  deck: newDeck,
+                  currentPlayerIndex: getNextPlayerIndex(state.dealerIndex),
+                  playerBids: {},
+                  trick: [],
+                  trickStartPlayerIndex: undefined,
+              };
+          } else {
+              // START PLAYING
+              return {
+                  ...state,
+                  playerBids: nextPlayerBids,
+                  phase: "PLAYING" as const,
+                  currentPlayerIndex: getNextPlayerIndex(state.dealerIndex),
+              };
+          }
+      }
 
       return {
         ...state,
-        trumpSuit: action.suit,
-        phase: "PLAYING" as const,
-        currentPlayerIndex: getPlayerIndex(state, state.bidderId),
+        playerBids: nextPlayerBids,
+        currentPlayerIndex: getNextPlayerIndex(state.currentPlayerIndex),
       };
     }
 
@@ -124,7 +131,7 @@ export function applyAction(state: GameState, action: GameAction): GameState {
           state.trick.length === 0
             ? state.currentPlayerIndex
             : state.trickStartPlayerIndex,
-        currentPlayerIndex: (state.currentPlayerIndex + 1) % 4,
+        currentPlayerIndex: getNextPlayerIndex(state.currentPlayerIndex),
       };
     }
 
@@ -155,38 +162,61 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     // -------------------------------
     case "END_ROUND": {
       if (state.phase !== 'PLAYING') return state;
-      if (!state.bidderId || !state.highestBid) return state;
 
-      const deltas = calculateScoreDeltas(
-        state.highestBid,
-        state.bidderId,
-        { 1: state.teams[1].tricksWon, 2: state.teams[2].tricksWon },
-        state.players
-      );
-      if (!deltas) return state;
+      let isGameOver = false;
 
-      const newTeam1Score = state.teams[1].score + deltas.team1;
-      const newTeam2Score = state.teams[2].score + deltas.team2;
-      const isGameOver = newTeam1Score >= 41 || newTeam2Score >= 41;
+      const newPlayers = state.players.map(player => {
+        const bid = state.playerBids[player.id] ?? 0;
+        const tricksWon = state.teams[player.teamId].tricksWon;
+
+        if (bid === 0) return player; // Pass -> no score change
+
+        const madeBid = tricksWon >= bid;
+        const points = getBidPoints(bid, player.score);
+        const delta = madeBid ? points : -points;
+
+        return {
+          ...player,
+          score: player.score + delta
+        };
+      });
+
+      // Win condition
+      for (const teamId of [1, 2] as const) {
+        const teamPlayers = newPlayers.filter(p => p.teamId === teamId);
+        const hasWinner = teamPlayers.some(p => p.score >= 41);
+        const allPositive = teamPlayers.every(p => p.score > 0);
+        if (hasWinner && allPositive) {
+            isGameOver = true;
+        }
+      }
 
       return {
         ...state,
+        players: newPlayers,
         phase: isGameOver ? 'GAME_OVER' as const : 'SCORING' as const,
-        teams: {
-          1: { ...state.teams[1], score: newTeam1Score },
-          2: { ...state.teams[2], score: newTeam2Score },
-        },
       };
     }
 
     case 'START_NEXT_ROUND': {
       if (state.phase !== 'SCORING') return state;
-      const nextInitial = createInitialGameState(state.players.map(p => p.id));
+      
+      const newDealerIndex = getNextPlayerIndex(state.dealerIndex);
+      const nextInitial = createInitialGameState(state.players.map(p => p.id), newDealerIndex);
+      
+      const preservedPlayers = nextInitial.players.map(p => {
+        const oldPlayer = state.players.find(oldP => oldP.id === p.id);
+        return {
+          ...p,
+          score: oldPlayer ? oldPlayer.score : 0
+        };
+      });
       return {
         ...nextInitial,
+        players: preservedPlayers,
         teams: {
-          1: { tricksWon: 0, score: state.teams[1].score },
-          2: { tricksWon: 0, score: state.teams[2].score }
+          1: { tricksWon: 0 },
+          2: { tricksWon: 0 }
         }
       };
     }

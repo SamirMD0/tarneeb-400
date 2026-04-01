@@ -156,8 +156,15 @@ export function waitForEvent<T = any>(socket: ClientSocket, event: string, timeo
         const timer = setTimeout(() => reject(new Error(`Timeout waiting for "${event}"`)), timeout);
         socket.once(event, (data: T) => {
             clearTimeout(timer);
+            socket.off('error', errHandler);
             resolve(data);
         });
+        const errHandler = (err: any) => {
+            clearTimeout(timer);
+            socket.off(event, () => {});
+            reject(new Error(`Socket received error instead of ${event}: ` + JSON.stringify(err)));
+        };
+        socket.once('error', errHandler);
     });
 }
 

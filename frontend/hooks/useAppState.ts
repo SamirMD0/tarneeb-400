@@ -164,10 +164,9 @@ export function AppProvider({ children }: AppProviderProps): React.ReactNode {
     () => ({
       placeBid: gameActions.placeBid,
       passBid: gameActions.passBid,
-      selectTrump: gameActions.selectTrump,
       playCard: gameActions.playCard,
     }),
-    [gameActions.placeBid, gameActions.passBid, gameActions.selectTrump, gameActions.playCard]
+    [gameActions.placeBid, gameActions.passBid, gameActions.playCard]
   );
 
   const connectionDispatchers: ConnectionDispatchers = useMemo(

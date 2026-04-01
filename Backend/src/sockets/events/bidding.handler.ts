@@ -7,7 +7,7 @@ import type { GameState } from '../../game/state.js';
 import type { RoomManager } from '../../rooms/roomManager.js';
 import { applyMiddleware } from '../socketMiddleware.js';
 import { metrics } from '../../lib/metrics.js';
-import { PlaceBidSchema, SetTrumpSchema, validateSocketPayload } from '../../middlewares/validator.js';
+import { PlaceBidSchema, validateSocketPayload } from '../../middlewares/validator.js';
 import { botManager } from '../../bot/BotManager.js';
 
 type SocketType = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
@@ -33,13 +33,8 @@ export function registerBiddingHandlers(
     const passBid = wrapWithTiming('pass_bid',
         applyMiddleware(socket, (socket, data) => handlePassBid(socket, data, io, roomManager))
     );
-    const setTrump = wrapWithTiming('set_trump',
-        applyMiddleware(socket, (socket, data) => handleSetTrump(socket, data, io, roomManager))
-    );
-
     socket.on('place_bid', (data: any) => placeBid(data));
     socket.on('pass_bid', (data: any) => passBid(data));
-    socket.on('set_trump', (data: any) => setTrump(data));
 }
 
 /**
@@ -144,52 +139,6 @@ async function handlePassBid(
 
     if (!success) {
         socket.emit('error', { code: 'INVALID_ACTION', message: 'Pass was rejected by game engine' });
-        return;
-    }
-
-    io.to(roomId).emit('game_state_updated', { roomId, gameState: sanitizeGameState(room.gameEngine.getState()) });
-
-    // Check if next player is a bot
-    botManager.handleGameStateUpdate(room, io);
-}
-
-async function handleSetTrump(
-    socket: SocketType,
-    data: any,
-    io: Server<ClientToServerEvents, ServerToClientEvents, {}, SocketData>,
-    roomManager: RoomManager
-): Promise<void> {
-    const roomId = socket.data.roomId;
-    if (!roomId) {
-        socket.emit('error', { code: 'NOT_IN_ROOM', message: 'You must be in a room to set trump' });
-        return;
-    }
-
-    let validated;
-    try {
-        validated = validateSocketPayload(SetTrumpSchema, data);
-    } catch {
-        socket.emit('error', { code: 'INVALID_PAYLOAD', message: 'Invalid trump payload' });
-        return;
-    }
-    const { suit } = validated;
-
-    const room = await roomManager.getRoom(roomId);
-    if (!room) {
-        socket.emit('error', { code: 'ROOM_NOT_FOUND', message: 'Room does not exist' });
-        return;
-    }
-
-    if (!room.gameEngine) {
-        socket.emit('error', { code: 'GAME_NOT_STARTED', message: 'Game has not started yet' });
-        return;
-    }
-
-    const action: GameAction = { type: 'SET_TRUMP', suit: suit as any };
-    const success = room.gameEngine.dispatch(action);
-
-    if (!success) {
-        socket.emit('error', { code: 'INVALID_ACTION', message: 'Set trump was rejected by game engine' });
         return;
     }
 

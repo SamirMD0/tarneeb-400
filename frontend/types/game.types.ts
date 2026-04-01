@@ -23,31 +23,33 @@ export type GamePhase =
 
 // Mirrors Backend/src/game/state.ts → PlayerState
 export interface PlayerState {
-  id: string;   // socket.id — use this to identify the local player
+  id: string;   // stable playerId — use this to identify the local player
   hand: Card[];
   teamId: 1 | 2;
+  score: number; // individual player score (per Tarneeb rules)
 }
 
 // Mirrors Backend/src/game/state.ts → TeamState
+// NOTE: Score is now per-player, NOT per-team. TeamState only tracks tricks won.
 export interface TeamState {
   tricksWon: number;
-  score: number;
 }
 
 // Mirrors Backend/src/game/state.ts → GameState (the full snapshot broadcast on every update)
+// Deck is stripped by the backend before broadcast (SanitizedGameState).
 export interface GameState {
   players: PlayerState[];
   teams: Record<1 | 2, TeamState>;
-  trumpSuit?: Suit;
-  currentPlayerIndex: number;      // Index into players[] — who acts next
-  trickStartPlayerIndex?: number;
+  trumpSuit: 'HEARTS';              // Always Hearts — fixed per Tarneeb rules
+  dealerIndex: number;               // Index of the current dealer in players[]
+  currentPlayerIndex: number;        // Index into players[] — who acts next
+  trickStartPlayerIndex?: number;    // Who played the first card in the current trick
   phase: GamePhase;
-  trick: Card[];                   // Cards played in current trick, 0–4 items
-  highestBid?: number;
-  bidderId?: string;               // stable playerId of the player who won the bid
+  trick: Card[];                     // Cards played in current trick, 0–4 items
+  playerBids: Record<string, number>; // Each player's bid for the current round (playerId → bid value, 0 = pass)
 }
 
-// ─── Derived view (computed in useGameState, consumed by components) ──────────
+// ─── Derived view (computed in useDerivedGameView, consumed by components) ─────
 // Components must NEVER derive these themselves — always read from the hook.
 
 export interface DerivedGameView {
@@ -55,8 +57,6 @@ export interface DerivedGameView {
   myTeamId: 1 | 2 | null;
   activePlayerId: string | null;   // players[currentPlayerIndex].id
   isMyTurn: boolean;               // activePlayerId === myPlayerId
-  isBidWinner: boolean;            // bidderId === myPlayerId
-  mustSelectTrump: boolean;        // isBidWinner && phase === 'BIDDING' && !trumpSuit
   myHand: Card[];
   currentTrick: Card[];
   phase: GamePhase | null;
