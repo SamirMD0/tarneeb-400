@@ -9,7 +9,7 @@ export type LoadingVariant =
   | 'socket-connecting'   // App boot: socket not yet connected
   | 'room-hydrating'      // Joined room, waiting for first room_state snapshot
   | 'game-hydrating'      // Game started, waiting for first game snapshot
-  | 'action-pending'      // Bid / play_card / set_trump emit in flight
+  | 'action-pending'      // Bid / play_card emit in flight
   | 'join-pending'        // create_room or join_room emit in flight
   | 'reconnecting';       // Socket disconnected, automatic reconnect in progress
 

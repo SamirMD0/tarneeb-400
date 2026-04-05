@@ -521,8 +521,12 @@ describe('Socket.IO Server - Phase 17', () => {
                 waitForEvent<any>(s4, 'game_state_updated'),
             ]);
 
-            // FIX: value:2 is rejected by BidActionSchema (min:7). Use value:7.
+            // Emit from all sockets — only the current player's bid (value 7) will be accepted.
+            // The rest will get error events (silently ignored here).
             s1.emit('place_bid', { value: 7 });
+            s2.emit('place_bid', { value: 7 });
+            s3.emit('place_bid', { value: 7 });
+            s4.emit('place_bid', { value: 7 });
             const [u1, u2, u3, u4] = await updates;
 
             assert.equal(u1.roomId, roomId);
@@ -533,22 +537,76 @@ describe('Socket.IO Server - Phase 17', () => {
             assert.equal(u1.gameState.highestBid, 7);
         });
 
+        /**
+         * Helper: Complete a full 4-player bidding round so the game transitions to PLAYING.
+         * Each player bids in turn order with escalating values (3, 4, 5, 6) totalling 18 >= 11 (minTotalBids).
+         * Returns the last game_state_updated event received (should have phase === 'PLAYING').
+         */
+        async function completeBidding(sockets: FourSockets): Promise<any> {
+            const [s1, s2, s3, s4] = sockets;
+            const socketByUserId = new Map<string, ClientSocket>([
+                [(s1 as any).testUserId as string, s1],
+                [(s2 as any).testUserId as string, s2],
+                [(s3 as any).testUserId as string, s3],
+                [(s4 as any).testUserId as string, s4],
+            ]);
+
+            // Get current state to find turn order
+            // After startGameForRoom, s1 should have received game_started which has gameState
+            // We need the initial state — request it by placing a bid from whoever is current
+            const bidValues = [3, 4, 5, 6]; // Each strictly > previous, total = 18 >= 11
+            let lastUpdate: any = null;
+
+            for (let i = 0; i < 4; i++) {
+                // For the first bid, we need to know who goes first.
+                // After START_BIDDING, currentPlayerIndex = (dealerIndex + 1) % 4.
+                // We'll get the state from the game_state_updated after each bid.
+                if (i === 0) {
+                    // First bidder: we don't have a game_state_updated yet, so we
+                    // need to figure out who bids first. After START_BIDDING with dealerIndex=0,
+                    // currentPlayerIndex=1. But we don't know which socket that maps to.
+                    // Instead, just try s1 first; if it's not s1's turn, the error will tell us.
+                    // Actually — let's use the game_started state. We'll request a fresh state.
+                    // Simpler: emit place_bid from all sockets with increasing values.
+                    // Only the correct one will succeed (others get error silently).
+                    // But that's not clean. Let's use game_action to query state.
+
+                    // Alternative approach: just have each socket try to bid with its value.
+                    // The reducer enforces turn order, so only the right socket's bid will be accepted.
+                    // We listen for game_state_updated on s1 to track progress.
+                    const updatePromise = waitForEvent<any>(s1, 'game_state_updated');
+
+                    // Try all sockets — only the one whose turn it is will trigger an update
+                    for (const [userId, sock] of socketByUserId) {
+                        sock.emit('place_bid', { value: bidValues[i] });
+                    }
+
+                    lastUpdate = await updatePromise;
+                } else {
+                    const state = lastUpdate.gameState;
+                    const currentIdx = state.currentPlayerIndex as number;
+                    const currentPlayerId = state.players[currentIdx].id as string;
+                    const currentSocket = socketByUserId.get(currentPlayerId);
+                    assert.ok(currentSocket, `Bidding: socket for player index ${currentIdx} should exist`);
+
+                    const updatePromise = waitForEvent<any>(s1, 'game_state_updated');
+                    currentSocket.emit('place_bid', { value: bidValues[i]! });
+                    lastUpdate = await updatePromise;
+                }
+            }
+
+            assert.equal(lastUpdate.gameState.phase, 'PLAYING', 'Game should transition to PLAYING after valid bidding round');
+            return lastUpdate;
+        }
+
         it('should reject invalid play_card action (card not in hand)', async () => {
             const { sockets } = await createFullRoom();
             const [s1] = sockets;
 
             await startGameForRoom(sockets);
 
-            // FIX: use value:7 (valid bid per BidActionSchema)
-            const bidUpdate = Promise.all([
-                waitForEvent<any>(s1, 'game_state_updated'),
-            ]);
-            s1.emit('place_bid', { value: 7 });
-            await bidUpdate;
-
-            const trumpUpdate = waitForEvent<any>(s1, 'game_state_updated');
-            s1.emit('set_trump', { suit: 'SPADES' });
-            await trumpUpdate;
+            // Complete a full bidding round to transition to PLAYING
+            await completeBidding(sockets);
 
             const errPromise = waitForEvent<any>(s1, 'error');
             s1.emit('play_card', { card: { suit: 'SPADES', rank: 'X' } });
@@ -562,14 +620,8 @@ describe('Socket.IO Server - Phase 17', () => {
 
             await startGameForRoom(sockets);
 
-            // FIX: use value:7 (valid bid)
-            const bidUpdate = waitForEvent<any>(s1, 'game_state_updated');
-            s1.emit('place_bid', { value: 7 });
-            await bidUpdate;
-
-            const trumpUpdate = waitForEvent<any>(s1, 'game_state_updated');
-            s1.emit('set_trump', { suit: 'SPADES' });
-            let lastUpdate = await trumpUpdate;
+            // Complete a full bidding round to transition to PLAYING
+            let lastUpdate = await completeBidding(sockets);
 
             assert.ok(s1.id, 'Socket id should be set');
             assert.ok(s2.id, 'Socket id should be set');

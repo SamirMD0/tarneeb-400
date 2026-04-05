@@ -33,6 +33,8 @@ export interface GameState {
   phase: GamePhase;
   trick: Card[];
   playerBids: Record<string, number>;
+  highestBid: number;
+  highestBidderId: string | null;
 }
 
 export function createInitialGameState(playerIds: string[], initialDealerIndex = 0): GameState {
@@ -70,7 +72,9 @@ export function createInitialGameState(playerIds: string[], initialDealerIndex =
     currentPlayerIndex: (initialDealerIndex + 1) % 4, // right of dealer plays first
     phase: 'DEALING',
     trick: [],
-    playerBids: {}
+    playerBids: {},
+    highestBid: 0,
+    highestBidderId: null
   };
 }
 

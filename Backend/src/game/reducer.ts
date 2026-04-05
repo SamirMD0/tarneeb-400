@@ -45,9 +45,17 @@ export function applyAction(state: GameState, action: GameAction): GameState {
       if (!currentPlayer || currentPlayer.id !== action.playerId) return state;
 
       let bidValue = 0;
+      let nextHighestBid = state.highestBid;
+      let nextHighestBidderId = state.highestBidderId;
+
       if (action.type === "BID") {
-         if (!isBidValid(action.value, currentPlayer.score)) return state;
+         if (!isBidValid(action.value, currentPlayer.score, state.highestBid)) return state;
          bidValue = action.value;
+         // Track the highest bid seen so far (for contract-winner determination)
+         if (action.value > state.highestBid) {
+           nextHighestBid = action.value;
+           nextHighestBidderId = action.playerId;
+         }
       }
 
       const nextPlayerBids = { ...state.playerBids, [action.playerId]: bidValue };
@@ -70,6 +78,8 @@ export function applyAction(state: GameState, action: GameAction): GameState {
                   deck: newDeck,
                   currentPlayerIndex: getNextPlayerIndex(state.dealerIndex),
                   playerBids: {},
+                  highestBid: 0,
+                  highestBidderId: null,
                   trick: [],
                   trickStartPlayerIndex: undefined,
               };
@@ -78,8 +88,11 @@ export function applyAction(state: GameState, action: GameAction): GameState {
               return {
                   ...state,
                   playerBids: nextPlayerBids,
+                  highestBid: nextHighestBid,
+                  highestBidderId: nextHighestBidderId,
                   phase: "PLAYING" as const,
                   currentPlayerIndex: getNextPlayerIndex(state.dealerIndex),
+                  trickStartPlayerIndex: undefined,
               };
           }
       }
@@ -87,6 +100,8 @@ export function applyAction(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         playerBids: nextPlayerBids,
+        highestBid: nextHighestBid,
+        highestBidderId: nextHighestBidderId,
         currentPlayerIndex: getNextPlayerIndex(state.currentPlayerIndex),
       };
     }

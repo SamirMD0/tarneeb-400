@@ -130,10 +130,14 @@ export function getMinTotalBids(
   return 11;
 }
 
-/* Validate a single bid (called during bidding turn) */
+/* Validate a single bid (called during bidding turn).
+   In Tarneeb 400 each player bids independently — bids do NOT need to
+   exceed the current highest bid.  The highestBid param is accepted
+   for API compatibility but is intentionally unused for validation. */
 export function isBidValid(
   bid: number,
-  playerScore: number
+  playerScore: number,
+  _currentHighestBid?: number
 ): boolean {
   const minBid = getMinIndividualBid(playerScore);
 

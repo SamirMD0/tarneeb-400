@@ -27,6 +27,8 @@ describe('gameHistory.service', () => {
         trick: [],
         dealerIndex: 0,
         playerBids: {},
+        highestBid: 0,
+        highestBidderId: null,
     });
 
     describe('saveGame', () => {

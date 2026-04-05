@@ -753,54 +753,55 @@ describe('rules', () => {
   // =================================================================
   describe('Bidding Validation', () => {
     describe('isBidValid', () => {
-      it('should accept valid bids in range 7-13', () => {
-        assert.equal(isBidValid(7, 0), true);
-        assert.equal(isBidValid(10, 0), true);
-        assert.equal(isBidValid(13, 0), true);
+      it('should accept valid bids in range 7-13 with no prior bid', () => {
+        assert.equal(isBidValid(7, 0, 0), true);
+        assert.equal(isBidValid(10, 0, 0), true);
+        assert.equal(isBidValid(13, 0, 0), true);
       });
 
       it('should reject bids below minimum for score', () => {
         // Score < 30 -> min bid 2
-        assert.equal(isBidValid(1, 0), false);
-        assert.equal(isBidValid(2, 0), true);
+        assert.equal(isBidValid(1, 0, 0), false);
+        assert.equal(isBidValid(2, 0, 0), true);
 
         // Score >= 30 -> min bid 3
-        assert.equal(isBidValid(2, 30), false);
-        assert.equal(isBidValid(3, 30), true);
+        assert.equal(isBidValid(2, 30, 0), false);
+        assert.equal(isBidValid(3, 30, 0), true);
 
         // General invalid bids
-        assert.equal(isBidValid(0, 0), false);
-        assert.equal(isBidValid(-1, 0), false);
+        assert.equal(isBidValid(0, 0, 0), false);
+        assert.equal(isBidValid(-1, 0, 0), false);
       });
 
       it('should reject bids above 13', () => {
-        assert.equal(isBidValid(14, 0), false);
-        assert.equal(isBidValid(20, 0), false);
+        assert.equal(isBidValid(14, 0, 0), false);
+        assert.equal(isBidValid(20, 0, 0), false);
       });
 
-      it('should reject bids not higher than current highest', () => {
-        assert.equal(isBidValid(7, 0), false);
-        assert.equal(isBidValid(7, 0), false);
-        assert.equal(isBidValid(9, 0), false);
+      it('should accept valid bids regardless of current highest (independent bidding)', () => {
+        // In Tarneeb 400, each player bids independently — no outbid requirement
+        assert.equal(isBidValid(7, 0, 7), true);   // equal to highest — allowed
+        assert.equal(isBidValid(5, 0, 8), true);    // below highest — allowed
+        assert.equal(isBidValid(2, 0, 10), true);   // well below highest — allowed
       });
 
       it('should accept bids higher than current highest', () => {
-        assert.equal(isBidValid(8, 0), true);
-        assert.equal(isBidValid(10, 0), true);
-        assert.equal(isBidValid(13, 0), true);
+        assert.equal(isBidValid(8, 0, 7), true);
+        assert.equal(isBidValid(10, 0, 7), true);
+        assert.equal(isBidValid(13, 0, 7), true);
       });
 
       it('should allow any valid bid when no highest bid exists', () => {
-        assert.equal(isBidValid(7, 0), true);
-        assert.equal(isBidValid(10, 50), true);
-        assert.equal(isBidValid(13, 100), true);
+        assert.equal(isBidValid(7, 0, 0), true);
+        assert.equal(isBidValid(10, 50, 0), true);
+        assert.equal(isBidValid(13, 100, 0), true);
       });
 
       it('should handle boundary conditions', () => {
-        assert.equal(isBidValid(7, 0), true);
-        assert.equal(isBidValid(7, 0), false);
-        assert.equal(isBidValid(13, 0), true);
-        assert.equal(isBidValid(13, 0), false);
+        assert.equal(isBidValid(2, 0, 0), true);    // min bid at score 0
+        assert.equal(isBidValid(2, 0, 13), true);    // min bid even with max highest
+        assert.equal(isBidValid(13, 0, 0), true);    // max bid
+        assert.equal(isBidValid(13, 0, 13), true);   // max bid even when highest is 13
       });
     });
 

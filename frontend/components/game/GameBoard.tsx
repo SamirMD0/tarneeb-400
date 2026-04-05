@@ -89,7 +89,7 @@ export function GameBoard() {
   const showHandCards = phase === 'PLAYING' || phase === 'BIDDING';
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-3 sm:gap-6">
 
       {/* Game action error banner — transient, shown above the board */}
       {game.lastError && (
@@ -101,7 +101,7 @@ export function GameBoard() {
       )}
 
       {/* Table */}
-      <div className="glow-panel p-4 relative overflow-visible">
+      <div className="glow-panel p-2 sm:p-4 relative overflow-visible">
         <div
           className="absolute top-0 left-6 right-6 h-px"
           style={{
@@ -111,7 +111,7 @@ export function GameBoard() {
           aria-hidden="true"
         />
 
-        <div className="game-table flex-1 min-h-[400px]">
+        <div className="game-table flex-1">
           <div className="game-table__top">
             {top ? <PlayerSeat player={top} /> : <EmptySeat index={0} />}
           </div>

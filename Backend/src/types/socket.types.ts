@@ -34,7 +34,6 @@ export interface ClientToServerEvents {
   // Bidding (Phase 18)
   place_bid: (data: { value: number }) => void;
   pass_bid: (data: {}) => void;
-  set_trump: (data: { suit: string }) => void;
 
   // Playing (Phase 18)
   play_card: (data: { card: { suit: string; rank: string } }) => void;

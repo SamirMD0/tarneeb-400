@@ -72,28 +72,17 @@ describe('Concurrent Rooms Load Test', { timeout: LOAD_TEST_TIMEOUT }, () => {
             const socketMap = buildSocketMap(sockets);
             let state = startResults[roomIndex]!.gameState;
 
-            // Bid
-            const bidderId = state.players[state.currentPlayerIndex].id as string;
-            const bidderSocket = socketMap.get(bidderId)!;
-
-            const bidUpdate = waitForEvent<any>(sockets[0], 'game_state_updated');
-            bidderSocket.emit('place_bid', { value: 7 });
-            state = (await bidUpdate).gameState;
-
-            // 3 passes
-            for (let i = 0; i < 3; i++) {
-                const passerId = state.players[state.currentPlayerIndex].id as string;
-                const passerSocket = socketMap.get(passerId)!;
-                const passUpdate = waitForEvent<any>(sockets[0], 'game_state_updated');
-                passerSocket.emit('pass_bid', {});
-                state = (await passUpdate).gameState;
+            // Bid: all 4 players place escalating bids (3, 4, 5, 6) totalling 18 >= 11
+            const bidValues = [3, 4, 5, 6];
+            for (let bidIdx = 0; bidIdx < 4; bidIdx++) {
+                const bidderId = state.players[state.currentPlayerIndex].id as string;
+                const bidderSocket = socketMap.get(bidderId)!;
+                const bidUpdate = waitForEvent<any>(sockets[0], 'game_state_updated');
+                bidderSocket.emit('place_bid', { value: bidValues[bidIdx]! });
+                state = (await bidUpdate).gameState;
             }
 
-            // Set trump
-            const trumpUpdate = waitForEvent<any>(sockets[0], 'game_state_updated');
-            bidderSocket.emit('set_trump', { suit: 'HEARTS' });
-            state = (await trumpUpdate).gameState;
-            assert.equal(state.phase, 'PLAYING', `Room ${roomIndex}: must be PLAYING after set_trump`);
+            assert.equal(state.phase, 'PLAYING', `Room ${roomIndex}: must be PLAYING after bidding`);
 
             // Play 4 cards (1 complete trick)
             for (let cardNum = 0; cardNum < 4; cardNum++) {

@@ -198,14 +198,13 @@ export class BotManager {
 
         // Decide bid or pass
         const playerScore = state.players[state.currentPlayerIndex]!.score;
-        const bidValue = this.decideBid(hand, playerScore);
+        const bidValue = this.decideBid(hand, playerScore, state.highestBid);
 
         let action: GameAction;
         if (bidValue !== null) {
             action = { type: 'BID', playerId: botId, value: bidValue };
         } else {
-            // Safety fallback, though decideBid shouldn't return null anymore
-            action = { type: 'BID', playerId: botId, value: 2 };
+            action = { type: 'PASS', playerId: botId };
         }
 
         const success = room.gameEngine.dispatch(action);
@@ -323,7 +322,7 @@ export class BotManager {
      * - Otherwise → pass
      * - Never bid at or below current highest bid
      */
-    private decideBid(hand: Card[], playerScore: number): number | null {
+    private decideBid(hand: Card[], playerScore: number, highestBid: number = 0): number | null {
         let strongCount = 0;
         let mediumCount = 0;
 
@@ -348,10 +347,10 @@ export class BotManager {
         }
 
         // Calculate min bid based on player score securely
-        const minBid = playerScore >= 50 ? 5 : playerScore >= 40 ? 4 : playerScore >= 30 ? 3 : 2;
+        const minIndividualBid = playerScore >= 50 ? 5 : playerScore >= 40 ? 4 : playerScore >= 30 ? 3 : 2;
 
-        // Clamp to valid range. Bots are required to bid at least their minimum threshold.
-        const bid = Math.max(targetBid, minBid);
+        // Clamp to valid range — bid at least the score-based minimum
+        const bid = Math.max(targetBid, minIndividualBid);
         if (bid > 13) return 13;
 
         return bid;

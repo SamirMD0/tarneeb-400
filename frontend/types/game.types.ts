@@ -47,6 +47,8 @@ export interface GameState {
   phase: GamePhase;
   trick: Card[];                     // Cards played in current trick, 0–4 items
   playerBids: Record<string, number>; // Each player's bid for the current round (playerId → bid value, 0 = pass)
+  highestBid: number;                // current round's highest bid value (0 = no bid yet)
+  highestBidderId: string | null;    // playerId of current high bidder (null = no bid yet)
 }
 
 // ─── Derived view (computed in useDerivedGameView, consumed by components) ─────

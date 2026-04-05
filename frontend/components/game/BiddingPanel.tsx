@@ -39,7 +39,7 @@ export function BiddingPanel({
   }
 
   return (
-    <section aria-labelledby="bidding-heading" className="glow-panel p-5 relative">
+    <section aria-labelledby="bidding-heading" className="glow-panel p-3 sm:p-5 relative">
       {/* Top shimmer */}
       <div
         className="absolute top-0 left-6 right-6 h-px"
@@ -52,7 +52,7 @@ export function BiddingPanel({
 
       <h2
         id="bidding-heading"
-        className="text-sm font-semibold text-slate-50 mb-4 flex items-center gap-2"
+        className="text-xs sm:text-sm font-semibold text-slate-50 mb-2 sm:mb-4 flex items-center gap-2"
       >
         <span
           aria-hidden="true"
@@ -64,7 +64,7 @@ export function BiddingPanel({
       </h2>
 
       {/* Bid value chips */}
-      <div className="bid-values mb-4 flex-wrap max-w-sm">
+      <div className="bid-values mb-2 sm:mb-4 flex-wrap max-w-sm">
         {BID_VALUES.map((val) => {
           const isDisabled = !isMyTurn || val < minBid;
           return (
@@ -83,7 +83,7 @@ export function BiddingPanel({
       </div>
 
       {/* Action buttons */}
-      <div className="flex gap-3 max-w-sm">
+      <div className="flex gap-2 sm:gap-3 max-w-sm">
         <button
           type="button"
           className="glow-btn glow-btn--primary flex-1"

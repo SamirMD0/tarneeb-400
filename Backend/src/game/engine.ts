@@ -56,6 +56,7 @@ export class GameEngine {
         if (!Array.isArray(state.deck) || !Array.isArray(state.trick)) throw new Error('Invalid GameState: deck/trick must be arrays');
         if (typeof state.currentPlayerIndex !== 'number' || state.currentPlayerIndex < 0 || state.currentPlayerIndex > 3) throw new Error('Invalid GameState: currentPlayerIndex');
         if (!phases.has(state.phase as any)) throw new Error('Invalid GameState: phase');
+        if (typeof state.highestBid !== 'number' || state.highestBid < 0) throw new Error('Invalid GameState: highestBid');
 
         // Ensure player IDs are present and match provided set
         const stateIds = state.players.map(p => p.id).sort();
