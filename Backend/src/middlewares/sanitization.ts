@@ -178,6 +178,9 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
     // Referrer policy
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 
+    // HTTP Strict Transport Security
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+
     // Content Security Policy
     res.setHeader(
         'Content-Security-Policy',

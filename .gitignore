@@ -141,3 +141,11 @@ vite.config.ts.timestamp-*
 .vite/
 # Local temp files
 /tmp_room_handler_numbered.txt
+
+# Test output (never commit)
+test_results.txt
+test_output.txt
+
+# Legacy scripts
+fix_tests.cjs
+

@@ -32,11 +32,6 @@ export type PassAction = {
   playerId: string;
 };
 
-export type TrumpAction = {
-  type: 'SET_TRUMP';
-  suit: Suit;
-};
-
 export type PlayCardAction = {
   type: 'PLAY_CARD';
   playerId: string;
@@ -46,7 +41,6 @@ export type PlayCardAction = {
 export type GameAction =
   | BidAction
   | PassAction
-  | TrumpAction
   | PlayCardAction
   | { type: 'END_TRICK' }
   | { type: 'END_ROUND' }

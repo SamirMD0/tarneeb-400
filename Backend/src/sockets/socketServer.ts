@@ -33,6 +33,9 @@ export function initializeSocketServer(httpServer: HTTPServer): Server<
         pingTimeout: 60000,
         pingInterval: 25000,
         connectTimeout: 45000,
+        perMessageDeflate: {
+            threshold: 1024, // Optional: only compress messages larger than 1KB
+        },
     });
 
     // Phase 19: Socket Connection Rate Limiting

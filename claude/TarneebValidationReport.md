@@ -1,5 +1,20 @@
 # Tarneeb Rules Validation Report
 
+> **Status: ✅ ALL ISSUES RESOLVED**
+>
+> This report was generated during development to audit the game engine against the official Tarneeb 400 rules.
+> All 7 identified issues (3 Critical, 3 High, 1 Medium) have been systematically resolved.
+>
+> | # | Issue | Severity | Status |
+> |---|-------|----------|--------|
+> | 1 | Hearts Fixed vs. Chosen Trump | CRITICAL | ✅ Resolved — `trumpSuit` hardcoded as `'HEARTS'`, `SET_TRUMP` removed |
+> | 2 | Scoring Formula (lookup table) | CRITICAL | ✅ Resolved — `getBidPoints()` implements official points table |
+> | 3 | Individual vs. Team Scoring | CRITICAL | ✅ Resolved — `PlayerState.score` tracks per-player, `TeamState.score` removed |
+> | 4 | Win Condition (partner > 0) | HIGH | ✅ Resolved — `isGameOver()` checks partner score > 0 |
+> | 5 | Card Redistribution | HIGH | ✅ Resolved — Redeal logic in BID/PASS reducer when total bids < minimum |
+> | 6 | Dealer Rotation | MEDIUM | ✅ Resolved — `dealerIndex` tracked and rotated in `START_NEXT_ROUND` |
+> | 7 | All Player Bids Retained | HIGH | ✅ Resolved — `playerBids: Record<string, number>` stores all 4 bids |
+
 ---
 
 ## 1. Bidding System

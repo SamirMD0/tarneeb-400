@@ -6,12 +6,10 @@ import { Server } from 'socket.io';
 import { AddressInfo } from 'net';
 import express from 'express';
 import { registerHandlers } from '../../sockets/socketHandlers.js';
-import { socketConnectionLimiter } from '../../middlewares/rateLimiter.js';
 
 describe('Socket Integration Failure Modes', () => {
     let io: Server;
     let server: any;
-    let clientSocket: any;
     let port: number;
 
     before(async () => {
@@ -19,18 +17,8 @@ describe('Socket Integration Failure Modes', () => {
         server = createServer(app);
         io = new Server(server);
 
-        // Register handlers
+        // Register handlers (no auth middleware — testing error paths only)
         registerHandlers(io);
-
-        // Wire rate limiter manually for this test instance since it's usually in socketServer.ts
-        io.use(async (socket, next) => {
-            try {
-                await socketConnectionLimiter.consume(socket.handshake.address);
-                next();
-            } catch (e) {
-                next(new Error('Too many connection attempts, please try again later'));
-            }
-        });
 
         await new Promise<void>((resolve) => {
             server.listen(() => {
@@ -46,49 +34,66 @@ describe('Socket Integration Failure Modes', () => {
     });
 
     it('should reject malformed game actions with VALIDATION_ERROR', async () => {
-        clientSocket = Client(`http://localhost:${port}`);
+        const clientSocket = Client(`http://localhost:${port}`);
 
-        await new Promise<void>((resolve) => clientSocket.on('connect', resolve));
+        try {
+            await new Promise<void>((resolve) => clientSocket.on('connect', resolve));
 
-        // 1. Create a room first to get a roomId
-        clientSocket.emit('create_room', { config: {} });
+            // Manually set socket.data.roomId on the server side to bypass room check
+            // We want to test that the VALIDATION path triggers for bad payloads
+            const serverSockets = await io.fetchSockets();
+            const matched = serverSockets.find(s => s.id === clientSocket.id);
+            if (matched) {
+                matched.data.roomId = 'fake-room-id';
+            }
 
-        const roomCreated: any = await new Promise((resolve) => clientSocket.on('room_created', resolve));
-        const roomId = roomCreated.roomId;
+            // Send malformed action (missing the `action` wrapper or missing `type`)
+            const result = await new Promise<void>((resolve, reject) => {
+                const timeout = setTimeout(() => reject(new Error('Timed out waiting for error event')), 4000);
 
-        // 2. Send malformed action (missing type)
-        return new Promise<void>((resolve, reject) => {
-            clientSocket.on('error', (err: any) => {
-                try {
-                    assert.equal(err.code, 'VALIDATION_ERROR');
-                    resolve();
-                } catch (e) {
-                    reject(e);
-                }
+                clientSocket.on('error', (err: any) => {
+                    clearTimeout(timeout);
+                    try {
+                        assert.equal(err.code, 'VALIDATION_ERROR');
+                        resolve();
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
+
+                // Invalid payload — no `action` key, no `type` field
+                clientSocket.emit('game_action', { invalid: 'payload' });
             });
-
-            // Invalid payload
-            clientSocket.emit('game_action', { invalid: 'payload' });
-        });
+        } finally {
+            clientSocket.close();
+        }
     });
 
     it('should reject actions when not in a room', async () => {
-        // New client, not in any room
+        // New client, not in any room — socket.data.roomId is undefined
         const socket2 = Client(`http://localhost:${port}`);
-        await new Promise<void>((resolve) => socket2.on('connect', resolve));
 
-        return new Promise<void>((resolve, reject) => {
-            socket2.on('error', (err: any) => {
-                try {
-                    assert.equal(err.code, 'NOT_IN_ROOM');
-                    socket2.close();
-                    resolve();
-                } catch (e) {
-                    reject(e);
-                }
+        try {
+            await new Promise<void>((resolve) => socket2.on('connect', resolve));
+
+            await new Promise<void>((resolve, reject) => {
+                const timeout = setTimeout(() => reject(new Error('Timed out waiting for error event')), 4000);
+
+                socket2.on('error', (err: any) => {
+                    clearTimeout(timeout);
+                    try {
+                        assert.equal(err.code, 'NOT_IN_ROOM');
+                        resolve();
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
+
+                // Valid action structure, but socket has no room
+                socket2.emit('game_action', { action: { type: 'BID', playerId: 'p1', value: 7 } });
             });
-
-            socket2.emit('game_action', { action: { type: 'BID', value: 7 } });
-        });
+        } finally {
+            socket2.close();
+        }
     });
 });

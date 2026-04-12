@@ -71,13 +71,11 @@ describe('Game State Initialization', () => {
     assert.equal(state.teams[2].tricksWon, 0);
   });
 
-  it('should initialize with empty trick and no trump', () => {
+  it('should initialize with empty trick and fixed hearts trump', () => {
     const state = createInitialGameState(['p1', 'p2', 'p3', 'p4']);
 
     assert.equal(state.trick.length, 0);
-    assert.equal(state.trumpSuit, undefined);
-    
-    
+    assert.equal(state.trumpSuit, 'HEARTS');
   });
 
   it('should shuffle the deck (non-deterministic test)', () => {

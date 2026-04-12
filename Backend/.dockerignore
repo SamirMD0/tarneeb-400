@@ -1,0 +1,17 @@
+node_modules
+dist
+.env
+.env.*
+!.env.example
+*.log
+*.txt
+*.md
+docs/
+src/**/*.test.ts
+src/__tests__/
+jest.config.js
+fix_tests.cjs
+test-redis.mjs
+.git
+.gitignore
+.vscode

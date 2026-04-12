@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { AppProvider, useAppState } from '@/hooks/useAppState';
+import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
 
 /**
  * SocketConnector — mounted once inside AppProvider.
@@ -29,12 +30,15 @@ interface ClientRootProps {
  * app/layout.tsx is a Server Component; AppProvider uses hooks and must
  * live inside a Client Component. This wrapper is the single authoritative
  * location where AppProvider and the socket connection are initialised.
+ *
+ * ErrorBoundary sits inside AppProvider so that a page crash doesn't
+ * unmount the socket connection or lose app state.
  */
 export default function ClientRoot({ children }: ClientRootProps) {
   return (
     <AppProvider>
       <SocketConnector />
-      {children}
+      <ErrorBoundary>{children}</ErrorBoundary>
     </AppProvider>
   );
-}
+}

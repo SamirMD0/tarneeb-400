@@ -239,16 +239,6 @@ describe('GameActionSchema', () => {
         assert.equal(result.success, false);
     });
 
-    it('should validate SET_TRUMP action', () => {
-        const trumpAction = {
-            type: 'SET_TRUMP',
-            suit: 'HEARTS',
-        };
-
-        const result = GameActionSchema.safeParse(trumpAction);
-        assert.equal(result.success, true);
-    });
-
     it('should validate PASS action', () => {
         const passAction = {
             type: 'PASS',
