@@ -818,3 +818,547 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  UI Improvements — Game Board                                          */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── Game board root ─────────────────────────────────────────────────── */
+.game-board-root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ─── Game Status Bar ─────────────────────────────────────────────────── */
+.game-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.625rem;
+  background: rgba(255 255 255 / 0.025);
+  border: 1px solid rgba(255 255 255 / 0.06);
+  font-size: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.game-status-bar__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--pill-color, #e555c7);
+  background: color-mix(in srgb, var(--pill-color, #e555c7) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pill-color, #e555c7) 30%, transparent);
+}
+
+.game-status-bar__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pill-color, #e555c7);
+  box-shadow: 0 0 6px var(--pill-color, #e555c7);
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+.game-status-bar__trump {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #ff5577;
+}
+.game-status-bar__trump-label {
+  color: #64748b;
+  font-weight: 500;
+}
+.game-status-bar__trump-suit {
+  font-size: 1rem;
+  filter: drop-shadow(0 0 5px #ff5577);
+}
+
+.game-status-bar__scores {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  color: #94a3b8;
+}
+.game-status-bar__team strong {
+  color: #f0f4ff;
+  font-weight: 700;
+  margin-left: 0.2rem;
+}
+.game-status-bar__sep {
+  color: #334155;
+  font-size: 0.65rem;
+}
+
+.game-status-bar__bid-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.game-status-bar__bid-count {
+  color: #ffaa33;
+  font-weight: 600;
+}
+.game-status-bar__high-bid {
+  color: #94a3b8;
+}
+
+.game-status-bar__target {
+  color: #334155;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Table wrapper ───────────────────────────────────────────────────── */
+.game-table-wrapper {
+  padding: 0.5rem;
+}
+
+/* Override: reduce min-height to fit standard laptop screens */
+.game-table {
+  min-height: 480px !important;
+}
+
+@media (max-width: 768px) {
+  .game-table {
+    min-height: 340px !important;
+  }
+}
+
+/* ─── Trick card sizing (larger on desktop) ───────────────────────────── */
+.trick-area {
+  --trick-card-w: clamp(4rem, 7vw, 5.5rem);
+  --trick-card-h: clamp(5.8rem, 10vw, 7.8rem);
+}
+
+@media (max-width: 768px) {
+  .trick-area {
+    --trick-card-w: 3rem;
+    --trick-card-h: 4.4rem;
+  }
+}
+
+/* ─── Trick player labels ─────────────────────────────────────────────── */
+.trick-area__slot {
+  position: relative;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.trick-area__player-label {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #475569;
+  text-align: center;
+  margin-bottom: 0.15rem;
+}
+
+/* Ghost placeholder improvement */
+.trick-area__ghost {
+  width: var(--trick-card-w, 5rem);
+  height: var(--trick-card-h, 7rem);
+  border-radius: 0.75rem;
+  border: 1px dashed rgba(255 255 255 / 0.1);
+  background: rgba(255 255 255 / 0.02);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trick-area__ghost-label {
+  font-size: 0.55rem;
+  color: rgba(255 255 255 / 0.15);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+  padding: 0.25rem;
+}
+
+/* ─── Player seat improvements ────────────────────────────────────────── */
+
+/* Team color bar at top of each seat */
+.player-seat {
+  position: relative;
+  overflow: hidden;
+}
+
+.player-seat__team-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--team-color, #e555c7);
+  opacity: 0.5;
+  transition: opacity 0.3s;
+}
+
+.player-seat--active .player-seat__team-bar {
+  opacity: 1;
+  box-shadow: 0 0 8px var(--team-color, #e555c7);
+}
+
+/* "You" badge */
+.player-seat__name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  justify-content: center;
+}
+
+.player-seat__you-badge {
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 9999px;
+  background: rgba(229 85 199 / 0.15);
+  border: 1px solid rgba(229 85 199 / 0.35);
+  color: #e555c7;
+  line-height: 1.4;
+}
+
+/* Self-seat subtle highlight */
+.player-seat--me {
+  background: rgba(229 85 199 / 0.04);
+}
+
+/* Stats block */
+.player-seat__stats {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 0.25rem;
+}
+
+.player-seat__score-block,
+.player-seat__tricks-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.player-seat__score-value {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #f0f4ff;
+  line-height: 1;
+}
+
+.player-seat__score-label {
+  font-size: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.player-seat__tricks-value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #94a3b8;
+  line-height: 1;
+}
+
+.player-seat__tricks-label {
+  font-size: 0.5rem;
+  letter-spacing: 0.04em;
+  color: #334155;
+  text-transform: uppercase;
+}
+
+.player-seat__stat-div {
+  width: 1px;
+  height: 1.5rem;
+  background: rgba(255 255 255 / 0.07);
+}
+
+/* Bid badge — shown during/after bidding */
+.player-seat__bid-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.375rem;
+  background: rgba(255 170 51 / 0.12);
+  border: 1px solid rgba(255 170 51 / 0.3);
+  color: #ffaa33;
+}
+
+/* Add bot button — cleaner inside empty seat */
+.player-seat__add-bot {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  background: rgba(229 85 199 / 0.08);
+  border: 1px solid rgba(229 85 199 / 0.25);
+  color: rgba(229 85 199 / 0.7);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  margin-top: 0.25rem;
+}
+.player-seat__add-bot:hover {
+  background: rgba(229 85 199 / 0.15);
+  color: #e555c7;
+}
+
+@media (max-width: 768px) {
+  .player-seat__score-value {
+    font-size: 0.85rem;
+  }
+  .player-seat__tricks-value {
+    font-size: 0.65rem;
+  }
+  .player-seat__stats {
+    gap: 0.3rem;
+  }
+  .player-seat__stat-div {
+    height: 1rem;
+  }
+}
+
+/* ─── Bidding panel improvements ──────────────────────────────────────── */
+.bidding-panel {
+  background: linear-gradient(160deg, var(--surface-2) 0%, var(--surface-1) 100%);
+  border: 1px solid var(--border-dim);
+  border-radius: 0.875rem;
+  padding: 1rem;
+  position: relative;
+  width: 100%;
+  max-width: 22rem;
+}
+
+@media (max-width: 768px) {
+  .bidding-panel {
+    max-width: 100%;
+    padding: 0.75rem;
+  }
+}
+
+.bidding-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 1.5rem; right: 1.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(229 85 199 / 0.4), transparent);
+  border-radius: 9999px;
+}
+
+.bidding-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.bidding-panel__suit-icon {
+  font-size: 1rem;
+}
+
+.bidding-panel__title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #f0f4ff;
+  flex: 1;
+  margin: 0;
+}
+
+.bidding-panel__progress {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #ffaa33;
+  background: rgba(255 170 51 / 0.1);
+  border: 1px solid rgba(255 170 51 / 0.25);
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+}
+
+.bidding-panel__min-hint {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin: 0 0 0.6rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(255 170 51 / 0.05);
+  border-left: 2px solid rgba(255 170 51 / 0.3);
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+.bidding-panel__min-hint strong {
+  color: #ffaa33;
+}
+
+/* 4-column controlled grid for bid chips */
+.bidding-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (max-width: 400px) {
+  .bidding-panel__grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.25rem;
+  }
+}
+
+/* Min-bid dot indicator */
+.bid-chip {
+  position: relative;
+}
+
+.bid-chip__min-dot {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffaa33;
+}
+
+.bid-chip--min {
+  border-color: rgba(255 170 51 / 0.35);
+}
+
+/* Actions row */
+.bidding-panel__actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.bidding-panel__bid-btn {
+  width: 100%;
+}
+
+.bidding-panel__pass-btn {
+  width: auto;
+  padding: 0.6rem 1rem;
+  background: rgba(255 255 255 / 0.04);
+  border: 1px solid rgba(255 255 255 / 0.1);
+  color: #64748b;
+  font-size: 0.8rem;
+}
+.bidding-panel__pass-btn:hover:not(:disabled) {
+  background: rgba(255 255 255 / 0.08);
+  color: #94a3b8;
+}
+
+.bidding-panel__waiting {
+  font-size: 0.75rem;
+  color: #475569;
+  text-align: center;
+  margin: 0.5rem 0 0;
+}
+
+/* ─── Hand wrapper: "your turn" indicator ─────────────────────────────── */
+.hand-wrapper {
+  position: relative;
+}
+
+.hand-wrapper--your-turn {
+  border-radius: 0.75rem;
+  box-shadow: 0 0 0 1px rgba(229 85 199 / 0.35), 0 0 20px rgba(229 85 199 / 0.12);
+  padding: 0.5rem;
+  background: rgba(229 85 199 / 0.03);
+  animation: hand-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes hand-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(229 85 199 / 0.35), 0 0 20px rgba(229 85 199 / 0.12); }
+  50%       { box-shadow: 0 0 0 1px rgba(229 85 199 / 0.6),  0 0 32px rgba(229 85 199 / 0.22); }
+}
+
+.hand-wrapper__cue {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #e555c7;
+  text-align: center;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+  text-shadow: 0 0 8px rgba(229 85 199 / 0.5);
+  animation: cue-fade 1.6s ease-in-out infinite;
+}
+
+@keyframes cue-fade {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+/* 1. Card play micro-animation — cards slide in from 8px below when added to trick */
+.trick-area__slot .glowing-card {
+  animation: card-settle 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes card-settle {
+  from { transform: translateY(8px) scale(0.92); opacity: 0; }
+  to   { transform: translateY(0)   scale(1);    opacity: 1; }
+}
+
+/* 2. Active seat — subtle shimmer sweep on the team bar */
+.player-seat--active .player-seat__team-bar {
+  background: linear-gradient(90deg, transparent, var(--team-color), transparent);
+  background-size: 200% 100%;
+  animation: bar-sweep 1.8s ease-in-out infinite;
+}
+@keyframes bar-sweep {
+  0%   { background-position: -100% 0; }
+  100% { background-position:  300% 0; }
+}
+
+/* 3. Score counter highlight when it changes — add via JS class toggle */
+.player-seat__score-value--changed {
+  animation: score-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes score-pop {
+  0%   { transform: scale(1);    color: #f0f4ff; }
+  40%  { transform: scale(1.3);  color: #55ffaa; }
+  100% { transform: scale(1);    color: #f0f4ff; }
+}
+
+/* 4. Bid chip hover — slight lift with glow color matching value weight */
+.bid-chip:not(:disabled):hover {
+  transform: translateY(-2px);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* 5. Status bar phase pill — animate the dot faster during active phases */
+.game-status-bar__pill[style*="--pill-color: #e555c7"] .game-status-bar__dot,
+.game-status-bar__pill[style*="--pill-color: #ffaa33"] .game-status-bar__dot {
+  animation-duration: 1s;
+}
+
+/* Win threshold progress bar */
+.player-seat__score-block::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(255 255 255 / 0.06);
+  margin-top: 0.2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.player-seat__score-block::after {
+  background: linear-gradient(90deg,
+    var(--team-color) var(--score-pct, 0%),
+    rgba(255 255 255 / 0.06) var(--score-pct, 0%)
+  );
+}

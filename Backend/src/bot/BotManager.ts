@@ -302,6 +302,22 @@ export class BotManager {
                     },
                 });
                 this.cleanupRoom(room.id);
+
+                // Clear game engine so room reverts to "waiting" state.
+                room.gameEngine = undefined;
+
+                // Broadcast room update (now shows as lobby/waiting)
+                io.to(room.id).emit('player_joined', {
+                    playerId: '',
+                    playerName: '',
+                    room: {
+                        id: room.id,
+                        players: Array.from(room.players.values()),
+                        config: room.config,
+                        hasGame: false,
+                        gameState: undefined,
+                    },
+                });
             }
             return;
         }

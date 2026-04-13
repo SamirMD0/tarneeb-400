@@ -139,7 +139,7 @@ export function useDerivedGameView({
     const phase: GamePhase = gs.phase;
 
     const readiness: GameReadinessFlags = {
-      gameIsActive: phase === 'BIDDING' || phase === 'PLAYING',
+      gameIsActive: phase === 'BIDDING' || phase === 'PLAYING' || phase === 'SCORING',
       gameIsOver: phase === 'GAME_OVER',
       biddingIsComplete: phase === 'PLAYING' || phase === 'SCORING' || phase === 'GAME_OVER',
       roundIsComplete: phase === 'SCORING',

@@ -133,10 +133,25 @@ async function handlePlayCard(
                     // Guard against race: room/engine may have been destroyed during the delay
                     if (!engineRef || engineRef.getState().phase !== 'SCORING') return;
                     engineRef.dispatch({ type: 'START_NEXT_ROUND' });
+
+                    let nextState = engineRef.getState();
                     io.to(roomId).emit('game_state_updated', {
                         roomId,
-                        gameState: sanitizeGameState(engineRef.getState()),
+                        gameState: sanitizeGameState(nextState),
                     });
+
+                    // START_NEXT_ROUND resets to DEALING — must dispatch START_BIDDING
+                    // to transition into BIDDING phase (same as BotManager logic)
+                    if (nextState.phase === 'DEALING') {
+                        engineRef.dispatch({ type: 'START_BIDDING' });
+                        io.to(roomId).emit('game_state_updated', {
+                            roomId,
+                            gameState: sanitizeGameState(engineRef.getState()),
+                        });
+                    }
+
+                    // Check if next player is a bot
+                    botManager.handleGameStateUpdate(room, io);
                 }, 3000);
             }
         }
@@ -161,6 +176,23 @@ async function handlePlayCard(
                 },
             });
             botManager.cleanupRoom(roomId);
+
+            // Clear game engine so room reverts to "waiting" state.
+            // This allows players to start a new game without leaving/rejoining.
+            room.gameEngine = undefined;
+
+            // Broadcast room update (now shows as lobby/waiting)
+            io.to(roomId).emit('player_joined', {
+                playerId: '',
+                playerName: '',
+                room: {
+                    id: room.id,
+                    players: Array.from(room.players.values()),
+                    config: room.config,
+                    hasGame: false,
+                    gameState: undefined,
+                },
+            });
         }
         return;
     }

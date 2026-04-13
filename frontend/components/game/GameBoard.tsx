@@ -6,6 +6,7 @@ import { PlayerSeat, type PlayerSeatData } from './PlayerSeat';
 import { HandCards } from './HandCards';
 import { TrickArea, type TrickCard } from './TrickArea';
 import { BiddingPanel } from './BiddingPanel';
+import { GameStatusBar } from './GameStatusBar';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import type { Card, Suit } from '@/types/game.types';
@@ -21,13 +22,10 @@ export function GameBoard() {
   const { game, room, dispatchers } = useAppState();
   const { derived } = game;
 
-  // ── Loading guard ──────────────────────────────────────────────────────────
   if (!derived.phase) {
     return <LoadingState variant="game-hydrating" />;
   }
 
-  // ── Build PlayerSeat data ──────────────────────────────────────────────────
-  // Seat order: [top, right, bottom(me), left] — bottom is always the local player.
   const players = game.gameState?.players ?? [];
   const myIndex = players.findIndex((p) => p.id === room.myPlayerId);
 
@@ -44,28 +42,27 @@ export function GameBoard() {
   const activePlayerId = derived.activePlayerId;
   const isBiddingPhase = derived.phase === 'BIDDING';
 
+  // Build seat data
   const seats: (PlayerSeatData | null)[] = Array.from({ length: 4 }, (_, i) => {
     const p = rotated[i];
     if (!p) return null;
-    
-    // playerBids only exist in the current round, if it's bidding or we are tracking current round bids
     const currentBid = game.gameState?.playerBids?.[p.id];
-    
     return {
       id: p.id,
-      username:
-        room.room?.players.find((lp) => lp.id === p.id)?.name ?? p.id.slice(0, 6),
+      username: room.room?.players.find((lp) => lp.id === p.id)?.name ?? p.id.slice(0, 6),
       tricksWon: game.gameState?.teams[p.teamId]?.tricksWon ?? 0,
-      score: p.score ?? 0, // from PlayerState, individual score
-      currentBid: currentBid,
+      score: p.score ?? 0,
+      currentBid,
       isActive: p.id === activePlayerId,
+      isMe: p.id === room.myPlayerId,
+      teamId: p.teamId,
       seatIndex: i,
     };
   });
 
   const [top, right, bottom, left] = seats;
 
-  // ── Trick cards ────────────────────────────────────────────────────────────
+  // Trick cards with player labels
   const trickCards: (TrickCard | null)[] = Array.from({ length: 4 }, (_, i) => {
     const card = derived.currentTrick[i];
     if (!card) return null;
@@ -74,10 +71,11 @@ export function GameBoard() {
       rank: card.rank,
       suit: SUIT_SYMBOLS[card.suit],
       playedBy: rotated[i]?.id ?? '',
+      playerName: room.room?.players.find(lp => lp.id === rotated[i]?.id)?.name?.slice(0, 6) ?? '',
     };
   });
 
-  // ── Hand cards ─────────────────────────────────────────────────────────────
+  // Hand cards
   const handCards = derived.myHand.map((card: Card, i: number) => ({
     id: `hand-${card.suit}-${card.rank}-${i}`,
     rank: card.rank,
@@ -88,10 +86,25 @@ export function GameBoard() {
   const isPlaying = phase === 'PLAYING';
   const showHandCards = phase === 'PLAYING' || phase === 'BIDDING';
 
-  return (
-    <div className="flex flex-col gap-3 sm:gap-6">
+  // Status bar data
+  const team1Score = Math.max(0, ...players.filter(p => p.teamId === 1).map(p => p.score));
+  const team2Score = Math.max(0, ...players.filter(p => p.teamId === 2).map(p => p.score));
+  const bidsPlaced = Object.keys(game.gameState?.playerBids ?? {}).length;
+  const highestBid = game.gameState?.highestBid ?? 0;
 
-      {/* Game action error banner — transient, shown above the board */}
+  return (
+    <div className="game-board-root">
+
+      {/* ── Status Bar ─────────────────────────────────────────────── */}
+      <GameStatusBar
+        phase={phase}
+        team1Score={team1Score}
+        team2Score={team2Score}
+        highestBid={highestBid}
+        bidsPlaced={bidsPlaced}
+      />
+
+      {/* ── Inline error ─────────────────────────────────────────────── */}
       {game.lastError && (
         <ErrorBanner
           category="game"
@@ -100,18 +113,13 @@ export function GameBoard() {
         />
       )}
 
-      {/* Table */}
-      <div className="glow-panel p-2 sm:p-4 relative overflow-visible">
-        <div
-          className="absolute top-0 left-6 right-6 h-px"
-          style={{
-            background:
-              'linear-gradient(90deg, transparent, rgba(229,85,199,0.35), transparent)',
-          }}
-          aria-hidden="true"
-        />
+      {/* ── Table ───────────────────────────────────────────────────── */}
+      <div className="glow-panel game-table-wrapper">
+        <div className="absolute top-0 left-6 right-6 h-px" style={{
+          background: 'linear-gradient(90deg, transparent, rgba(229,85,199,0.35), transparent)',
+        }} aria-hidden="true" />
 
-        <div className="game-table flex-1">
+        <div className="game-table">
           <div className="game-table__top">
             {top ? <PlayerSeat player={top} /> : <EmptySeat index={0} />}
           </div>
@@ -120,14 +128,14 @@ export function GameBoard() {
           </div>
           <div className="game-table__center">
             {isBiddingPhase ? (
-              <div className="flex items-center justify-center">
-                <BiddingPanel
-                  myScore={derived.myPlayer?.score ?? 0}
-                  isMyTurn={derived.isMyTurn}
-                  onBid={(value) => dispatchers.game.placeBid(value)}
-                  onPass={() => dispatchers.game.passBid()}
-                />
-              </div>
+              <BiddingPanel
+                myScore={derived.myPlayer?.score ?? 0}
+                isMyTurn={derived.isMyTurn}
+                playerBids={game.gameState?.playerBids ?? {}}
+                players={players}
+                onBid={(value) => dispatchers.game.placeBid(value)}
+                onPass={() => dispatchers.game.passBid()}
+              />
             ) : (
               <TrickArea cards={trickCards} />
             )}
@@ -141,18 +149,23 @@ export function GameBoard() {
         </div>
       </div>
 
-      {/* Local player's hand */}
+      {/* ── Hand ────────────────────────────────────────────────────── */}
       {showHandCards && (
-        <HandCards
-          cards={handCards}
-          onSelect={(card) => {
-            if (!isPlaying) return;
-            const original = derived.myHand.find(
-              (c) => SUIT_SYMBOLS[c.suit] === card.suit && c.rank === card.rank,
-            );
-            if (original) dispatchers.game.playCard(original);
-          }}
-        />
+        <div className={`hand-wrapper${isPlaying && derived.isMyTurn ? ' hand-wrapper--your-turn' : ''}`}>
+          {isPlaying && derived.isMyTurn && (
+            <p className="hand-wrapper__cue" aria-live="polite">Your turn — select a card</p>
+          )}
+          <HandCards
+            cards={handCards}
+            onSelect={(card) => {
+              if (!isPlaying) return;
+              const original = derived.myHand.find(
+                (c) => SUIT_SYMBOLS[c.suit] === card.suit && c.rank === card.rank,
+              );
+              if (original) dispatchers.game.playCard(original);
+            }}
+          />
+        </div>
       )}
     </div>
   );
@@ -166,6 +179,8 @@ function EmptySeat({ index }: { index: number }) {
     currentBid: undefined,
     tricksWon: 0,
     isActive: false,
+    isMe: false,
+    teamId: index % 2 === 0 ? 1 : 2,
     seatIndex: index,
   };
   return <PlayerSeat player={data} />;
