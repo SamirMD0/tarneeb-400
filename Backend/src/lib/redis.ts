@@ -71,7 +71,7 @@ export const redis = {
         const redisOptions = {
             url: process.env.REDIS_URL,
             socket: {
-                tls: process.env.REDIS_URL.startsWith('rediss://') ? {} : undefined,
+                tls: process.env.REDIS_URL.startsWith('rediss://'),
                 reconnectStrategy: (retries: number) => {
                     if (retries > MAX_RECONNECT_ATTEMPTS) {
                         return new Error('Max reconnection attempts reached');
