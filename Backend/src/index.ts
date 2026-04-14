@@ -43,6 +43,7 @@ process.on('uncaughtException', handleUncaughtException);
 process.on('unhandledRejection', handleUnhandledRejection);
 
 const app = express();
+app.set('trust proxy', 1); // Trust Render's load balancer for rate limiting IPs
 const httpServer = createServer(app);
 
 // Phase 17/20: Initialize Socket.IO and register handlers
