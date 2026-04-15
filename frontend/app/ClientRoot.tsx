@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { AppProvider, useAppState } from '@/hooks/useAppState';
 import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
+import { AuthProvider } from '@/hooks/useAuth';
 
 /**
  * SocketConnector — mounted once inside AppProvider.
@@ -36,9 +37,11 @@ interface ClientRootProps {
  */
 export default function ClientRoot({ children }: ClientRootProps) {
   return (
-    <AppProvider>
-      <SocketConnector />
-      <ErrorBoundary>{children}</ErrorBoundary>
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <SocketConnector />
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </AppProvider>
+    </AuthProvider>
   );
 }

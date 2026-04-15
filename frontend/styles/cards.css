@@ -930,6 +930,58 @@
 @media (max-width: 768px) {
   .game-table {
     min-height: 340px !important;
+    grid-template-columns: minmax(4.5rem, 1fr) minmax(0, 11rem) minmax(4.5rem, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .game-table__top,
+  .game-table__left,
+  .game-table__center,
+  .game-table__right,
+  .game-table__bottom {
+    min-width: 0;
+  }
+
+  .game-table__center {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .game-table__left,
+  .game-table__right {
+    width: 100%;
+  }
+
+  .game-table__left .player-seat,
+  .game-table__right .player-seat {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 0.3rem;
+  }
+
+  .game-table__left .player-seat__name-row,
+  .game-table__right .player-seat__name-row {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .game-table__left .player-seat__stats,
+  .game-table__right .player-seat__stats {
+    flex-direction: column;
+    gap: 0.2rem;
+    margin-top: 0.15rem;
+  }
+
+  .game-table__left .player-seat__stat-div,
+  .game-table__right .player-seat__stat-div {
+    display: none;
+  }
+
+  .game-table__left .player-seat__bid-badge,
+  .game-table__right .player-seat__bid-badge {
+    font-size: 0.5rem;
+    padding: 0.1rem 0.25rem;
   }
 }
 
