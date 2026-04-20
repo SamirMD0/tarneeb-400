@@ -13,6 +13,7 @@ import {
   getStoredUser,
   type AuthUser,
 } from '@/lib/auth';
+import { getSocket } from '@/lib/socketSingleton';
 
 export interface AuthContextType {
   user: AuthUser | null;
@@ -41,6 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const result = await loginUser(email, password);
       setUser(result.user);
+      const socket = getSocket();
+      if (socket) {
+        socket.disconnect();
+        socket.connect();
+      }
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
@@ -57,6 +63,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const result = await registerUser(name, email, password);
         setUser(result.user);
+        const socket = getSocket();
+        if (socket) {
+          socket.disconnect();
+          socket.connect();
+        }
         return true;
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
@@ -71,6 +82,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     logoutUser();
     setUser(null);
+    const socket = getSocket();
+    if (socket) {
+      socket.disconnect();
+      // Only connect anonymously if you expect guests to be able to do things, 
+      // otherwise stay disconnected until next login.
+      socket.connect();
+    }
   }, []);
 
   return (
